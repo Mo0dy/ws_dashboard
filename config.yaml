@@ -1,0 +1,154 @@
+# Generate windy widgets at:
+# https://embed.windy.com/config/forecast
+
+# Which "views" to rotate through (each view is a page state)
+views:
+  - name: overview
+    show_dwd: true
+    spots: [Epplesee, Bodensee-FN, Bodensee, Badsee, Erlichsee, Hardtsee, St-Leoner-See, Otterstadt]
+  - name: bodensee_region
+    show_dwd: false
+    spots: [Bodensee-FN, Bodensee]
+  - name: karlsruhe_region
+    show_dwd: false
+    spots: [Epplesee, Badsee, Erlichsee, Hardtsee]
+  - name: rhine_region
+    show_dwd: false
+    spots: [Iffezheim, Lauterbourg, Otterstadt, Plobsheim]
+  - name: black_forest
+    show_dwd: false
+    spots: [Schluchsee-Aha, St-Leoner-See]
+  - name: epplesee_focus
+    show_dwd: false
+    spots: [Epplesee]
+# dy widgets at:
+# https://embed.windy.com/config/forecast
+
+# Rotation behavior (set enabled: false if you don’t want auto-cycling)
+rotation:
+  enabled: false
+  interval_seconds: 60
+
+# Wind & weather “spots” (add as many as you like)
+# For Windy: give lat/lon + zoom + overlay. For Windfinder: paste their generated widget URL.
+spots:
+  Epplesee:
+    provider: windy
+    lat: 49.087
+    lon: 8.373
+    windy:
+      zoom: 11
+      overlay: wind  # wind, windGust, waves, rain, clouds, temperature, etc.
+      units_wind: kmh  # kmh, m/s, kt, mph, bft
+      marker: true
+      detail: true      # include spot forecast card
+  Bodensee-FN:
+    provider: windy
+    lat: 47.651
+    lon: 9.480
+    windy:
+      zoom: 10
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Badsee:
+    provider: windy
+    lat: 49.019
+    lon: 8.404
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Bodensee:
+    provider: windy
+    lat: 47.663
+    lon: 9.175
+    windy:
+      zoom: 10
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Erlichsee:
+    provider: windy
+    lat: 49.003
+    lon: 8.347
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Hardtsee:
+    provider: windy
+    lat: 49.063
+    lon: 8.357
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Iffezheim:
+    provider: windy
+    lat: 48.829
+    lon: 8.159
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Lauterbourg:
+    provider: windy
+    lat: 48.975
+    lon: 8.173
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Otterstadt:
+    provider: windy
+    lat: 49.361
+    lon: 8.456
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Plobsheim:
+    provider: windy
+    lat: 48.471
+    lon: 7.729
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  Schluchsee-Aha:
+    provider: windy
+    lat: 47.820
+    lon: 8.185
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
+  St-Leoner-See:
+    provider: windy
+    lat: 49.346
+    lon: 8.745
+    windy:
+      zoom: 11
+      overlay: wind
+      units_wind: kmh
+      marker: true
+      detail: true
