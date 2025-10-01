@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Windsurf Dashboard – {{ current_view }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🏄 Windsurf Dashboard</div>
+    <nav class="views">
+      {% for v in views %}
+        {% if v == current_view %}
+          <span class="view active">{{ v }}</span>
+        {% else %}
+          <a class="view" href="/view/{{ v }}">{{ v }}</a>
+        {% endif %}
+      {% endfor %}
+    </nav>
+  </header>
+
+  <main class="grid">
+    {% if show_dwd %}
+      <section class="card card--wide">
+        <div class="card__title">DWD – Großwetterlage Europa</div>
+        <div class="card__content">
+          <iframe
+            class="frame dwd"
+            src="{{ dwd_url }}"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          ></iframe>
+        </div>
+      </section>
+    {% endif %}
+
+    {% for s in spot_cards %}
+      <section class="card">
+        <div class="card__title">{{ s.title }}</div>
+        <div class="card__content">
+          {% if s.iframe_src %}
+            <iframe
+              class="frame"
+              src="{{ s.iframe_src }}"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          {% else %}
+            <div class="error">⚠️ Not configured correctly</div>
+          {% endif %}
+        </div>
+      </section>
+    {% endfor %}
+  </main>
+
+  <footer class="footer">
+    <div>
+      <small>
+        Windy & Windfinder content © their providers. Respect widget rules (Windfinder:
+        ≤3 per page, no auto-refresh).
+      </small>
+    </div>
+  </footer>
+
+  {% if rotation_enabled and views|length > 1 %}
+  <script>
+    (function () {
+      const views = {{ views|tojson }};
+      const current = "{{ current_view }}";
+      const intervalMs = {{ rotation_interval }} * 1000;
+
+      let idx = views.indexOf(current);
+      if (idx < 0) idx = 0;
+
+      // Rotate by switching window.location to next /view/<name>.
+      // NOTE: To comply with Windfinder “no auto-refresh”, we can also implement
+      // a mode that *does not* reload the page but toggles sections. For now we
+      // rotate the whole view only if Windfinder is not present.
+      const hasWindfinder = !!document.querySelector('iframe[src*="windfinder.com"]');
+
+      if (!hasWindfinder) {
+        setInterval(() => {
+          idx = (idx + 1) % views.length;
+          window.location.href = "/view/" + views[idx];
+        }, intervalMs);
+      } else {
+        // Soft-rotate (no page reload): cycle visible cards every interval
+        const cards = Array.from(document.querySelectorAll("main.grid > .card, .card--wide"));
+        let visibleCount = Math.min(3, cards.length); // show first 3 by default
+        let start = 0;
+
+        function updateVisibility() {
+          cards.forEach((c, i) => {
+            const inWindow = i >= start && i < start + visibleCount;
+            c.style.display = inWindow ? "" : "none";
+          });
+        }
+
+        updateVisibility();
+        setInterval(() => {
+          start = (start + visibleCount) % cards.length;
+          updateVisibility();
+        }, intervalMs);
+      }
+    })();
+  </script>
+  {% endif %}
+</body>
+</html>

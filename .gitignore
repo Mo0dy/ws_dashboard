@@ -1,0 +1,43 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# --- Virtualenvs ---
+# If you ever create a venv in-project (though with pyenv you usually don't)
+.venv/
+venv/
+ENV/
+
+# --- Pyenv ---
+.python-version
+
+# --- IDE/editor cruft ---
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Logs ---
+*.log
+
+# --- Byte-compiled cache ---
+*.pyc
+*.pkl
+*.pickle
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Project specific ---
+# Config file may be local-only if it has secrets.
+# Comment out if you want to commit a sample version.
+config.yaml
