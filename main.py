@@ -62,12 +62,12 @@ def load_config() -> Dict[str, Any]:
 
 # --- Windy/Windfinder URL builders ---
 def windy_iframe_src(lat: float, lon: float, opts: Dict[str, Any]) -> str:
-    # Map embed (with map)
+    # Map embed (with map) - this should show the interactive map for detail pages
     zoom = opts.get("zoom", 10)
     overlay = opts.get("overlay", "wind")
     marker = "true" if opts.get("marker", True) else "false"
-    detail = "true" if opts.get("detail", True) else "false"
     units_wind = opts.get("units_wind", "kmh")  # kmh, ms, kt, mph, bft
+    # For map view, we don't want detail=true as that shows forecast widget instead of map
     return (
         "https://embed.windy.com/embed2.html"
         f"?lat={lat:.5f}&lon={lon:.5f}"
@@ -75,9 +75,7 @@ def windy_iframe_src(lat: float, lon: float, opts: Dict[str, Any]) -> str:
         "&level=surface"
         f"&overlay={overlay}"
         f"&marker={marker}"
-        f"&location=coordinates"
-        f"&detail={detail}"
-        f"&detailLat={lat:.5f}&detailLon={lon:.5f}"
+        "&location=coordinates"
         f"&metricWind={units_wind}"
         f"&metricTemp=C"
     )
@@ -142,7 +140,9 @@ def view_page(request: Request, view_name: str):
     show_dwd = bool(view.get("show_dwd", False))
     spot_cards = []
 
-    # MAIN DASHBOARD: Windy -> forecast widget (no map); Windfinder -> as-is
+    # Views with show_dwd=true use forecast widgets; views with show_dwd=false use map widgets
+    use_maps = not show_dwd  # If DWD is not shown, use maps instead of forecast widgets
+    
     for spot_name in view.get("spots", []):
         spec = cfg["spots"].get(spot_name)
         if not spec:
@@ -160,8 +160,11 @@ def view_page(request: Request, view_name: str):
             if lat is None or lon is None:
                 spot_cards.append({"title": f"{title} (missing lat/lon)", "iframe_src": None, "detail_link": None})
             else:
-                # Use forecast-only widget on main dashboard
-                iframe_src = windy_forecast_iframe_src(lat, lon, windy_opts)
+                # Use map widget if DWD is not shown, forecast widget if DWD is shown
+                if use_maps:
+                    iframe_src = windy_iframe_src(lat, lon, windy_opts)
+                else:
+                    iframe_src = windy_forecast_iframe_src(lat, lon, windy_opts)
 
         elif provider == "windfinder":
             wf = spec.get("windfinder", {})
@@ -188,7 +191,7 @@ def view_page(request: Request, view_name: str):
             "spot_cards": spot_cards,
             "rotation_enabled": bool(rotation.get("enabled", False)),
             "rotation_interval": int(rotation.get("interval_seconds", 30)),
-            "compact": True,  # main dashboard shows forecast tables (no map)
+            "compact": show_dwd,  # compact=true (forecast) when DWD shown, compact=false (maps) when not
             "dwd_version": date.today().strftime("%Y%m%d"),
         },
     )
@@ -227,7 +230,7 @@ def spot_detail(request: Request, spot_name: str):
             "request": request,
             "current_view": f"spot:{spot_name}",
             "views": [],                 # hide top view tabs on detail (optional)
-            "show_dwd": True,
+            "show_dwd": False,
             "spot_cards": spot_cards,
             "rotation_enabled": False,   # usually no rotation on detail
             "rotation_interval": 30,

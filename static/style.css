@@ -148,3 +148,19 @@ body {
   padding: .6rem 1rem 1rem;
   color: var(--muted);
 }
+
+/* Detail page: single pane layout */
+.single { padding: .8rem; }
+.single .single-body { display: block; }
+
+/* Make the map truly fullscreen (minus header/footer) */
+.map-embed {
+  width: 100%;
+  height: calc(var(--fit-h));
+  border: none;
+  border-radius: .6rem;
+  display: block;
+}
+
+/* Reduce padding around the map card so it fills nicely */
+.card--map .card__content { padding: .4rem; }

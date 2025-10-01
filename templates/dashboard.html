@@ -20,69 +20,59 @@
     </nav>
   </header>
 
-  <!-- Two-column layout: left DWD, right vertical stack of widgets -->
-  <main class="twocol">
-    {% if show_dwd %}
-    <section class="left">
-      <div class="card card--dwd">
-        <div class="card__title">DWD – Großwetterlage & Prognosen</div>
-        <div class="card__content">
-          <img id="dwd-rotator" class="dwd-img" alt="DWD Großwetterlage" />
-          <div class="muted" style="margin-top:.4rem">
-            <small>Analysis shows for 30 s, then forecasts cycle every 5 s.</small>
+  <!-- Use two-column only on compact (main); single-pane on detail -->
+  <main class="{% if compact %}twocol{% else %}single{% endif %}">
+    {% if compact and show_dwd %}
+      <!-- LEFT: DWD only on compact (main) -->
+      <section class="left">
+        <div class="card card--dwd">
+          <div class="card__title">DWD – Großwetterlage & Prognosen</div>
+          <div class="card__content">
+            <img id="dwd-rotator" class="dwd-img" alt="DWD Großwetterlage" />
+            <div class="muted" style="margin-top:.4rem">
+              <small>Analysis 30 s, then forecasts 5 s each.</small>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       <script>
-        (function () {
-          const version = "{{ dwd_version }}"; // daily cache-buster
-          const frames = [
-            { src: "/dwd/main.png?d=" + version,  duration: 30000 }, // 30s analysis
-            { src: "/dwd/v036.png?d=" + version,  duration: 5000  },
-            { src: "/dwd/v048.png?d=" + version,  duration: 5000  },
-            { src: "/dwd/v060.png?d=" + version,  duration: 5000  },
-            { src: "/dwd/v084.png?d=" + version,  duration: 5000  },
-            { src: "/dwd/v108.png?d=" + version,  duration: 5000  },
-          ];
-
-          // Preload so switching is instant
-          frames.forEach(f => { const img = new Image(); img.src = f.src; });
-
-          const img = document.getElementById("dwd-rotator");
-          let idx = 0;
-
-          function show(i) {
-            img.src = frames[i].src;
-            img.dataset.idx = String(i);
-          }
-
-          function loop() {
-            show(idx);
-            const ms = frames[idx].duration;
-            idx = (idx + 1) % frames.length;
-            setTimeout(loop, ms);
-          }
-
-          show(0);
-          setTimeout(loop, frames[0].duration);
-        })();
+      (function () {
+        const version = "{{ dwd_version }}";
+        const frames = [
+          { src: "/dwd/main.png?d=" + version,  duration: 30000 },
+          { src: "/dwd/v036.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/v048.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/v060.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/v084.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/v108.png?d=" + version,  duration: 5000  },
+        ];
+        frames.forEach(f => { const im = new Image(); im.src = f.src; });
+        const img = document.getElementById("dwd-rotator");
+        let i = 0;
+        function show() {
+          img.src = frames[i].src;
+          setTimeout(() => { i = (i + 1) % frames.length; show(); }, frames[i].duration);
+        }
+        show();
+      })();
       </script>
-    </section>
     {% endif %}
 
-    <section class="right">
+    <!-- RIGHT (compact) or SINGLE (detail) -->
+    <section class="{% if compact %}right{% else %}single-body{% endif %}">
       {% for s in spot_cards %}
-        <div class="card card--spot">
+        <div class="card {% if compact %}card--spot{% else %}card--map{% endif %}">
           <div class="card__title">{{ s.title }}</div>
           <div class="card__content">
             {% if s.iframe_src %}
               <iframe
-                class="frame spot-frame"
+                class="frame {% if compact %}spot-frame{% else %}map-embed{% endif %}"
                 src="{{ s.iframe_src }}"
                 loading="lazy"
                 referrerpolicy="no-referrer"
               ></iframe>
+              <!-- debug: {{ s.iframe_src }} -->
             {% else %}
               <div class="error">⚠️ Not configured correctly</div>
             {% endif %}
@@ -92,19 +82,18 @@
     </section>
   </main>
 
-  <!-- Fit-to-viewport helpers -->
+  <!-- Fit-to-viewport helpers (unchanged) -->
   <script>
     (function () {
       function applyFit() {
         const top = document.querySelector('.topbar')?.offsetHeight || 0;
         const foot = document.querySelector('.footer')?.offsetHeight || 0;
-        const padding = 16; // matches layout padding
+        const padding = 16;
         const fitH = Math.max(320, window.innerHeight - top - foot - padding);
         document.documentElement.style.setProperty('--fit-h', fitH + 'px');
       }
       window.addEventListener('resize', applyFit);
       window.addEventListener('orientationchange', applyFit);
-      // mobile Safari “100vh” fix
       function setVhUnit() {
         document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
       }
@@ -116,51 +105,8 @@
 
   <footer class="footer">
     <div>
-      <small>
-        Windy & Windfinder content © their providers. Respect widget rules (Windfinder:
-        ≤3 per page, no auto-refresh).
-      </small>
+      <small>Windy & Windfinder content © their providers.</small>
     </div>
   </footer>
-
-  {% if rotation_enabled and views|length > 1 %}
-  <script>
-    (function () {
-      const views = {{ views|tojson }};
-      const current = "{{ current_view }}";
-      const intervalMs = {{ rotation_interval }} * 1000;
-
-      let idx = views.indexOf(current);
-      if (idx < 0) idx = 0;
-
-      const hasWindfinder = !!document.querySelector('iframe[src*="windfinder.com"]');
-
-      if (!hasWindfinder) {
-        setInterval(() => {
-          idx = (idx + 1) % views.length;
-          window.location.href = "/view/" + views[idx];
-        }, intervalMs);
-      } else {
-        // Soft-rotate (no page reload): cycle visible spot cards
-        const cards = Array.from(document.querySelectorAll("main.twocol .right > .card, main.twocol .left > .card"));
-        let visibleCount = Math.min(3, cards.length);
-        let start = 0;
-
-        function updateVisibility() {
-          cards.forEach((c, i) => {
-            const inWindow = i >= start && i < start + visibleCount;
-            c.style.display = inWindow ? "" : "none";
-          });
-        }
-
-        updateVisibility();
-        setInterval(() => {
-          start = (start + visibleCount) % cards.length;
-          updateVisibility();
-        }, intervalMs);
-      }
-    })();
-  </script>
-  {% endif %}
 </body>
 </html>
