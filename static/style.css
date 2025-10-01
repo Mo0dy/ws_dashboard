@@ -76,6 +76,38 @@ body {
 
 .error { color: #ff7b7b; }
 
+/* Compact spot cards with rotated titles on the left */
+.twocol .right .card--spot {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.twocol .right .card--spot .card__title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  min-width: 2.5rem;
+  max-width: 2.5rem;
+  padding: .4rem .2rem;
+  border-bottom: none;
+  border-right: 1px solid #20262c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.twocol .right .card--spot .card__content {
+  flex: 1;
+  padding: 0;
+  display: flex;
+}
+
 /* ---- Generic frames (iframed widgets, images) ---- */
 .frame {
   width: 100%;
@@ -113,7 +145,7 @@ body {
 .twocol .right {
   grid-column: 2;
   display: grid;
-  gap: .8rem;
+  gap: .4rem;  /* Reduced gap to stack closer */
 }
 
 /* Default spot frame behavior:
@@ -123,23 +155,31 @@ body {
   height: auto;
   min-height: 160px;           /* safety floor */
   border: none;
-  border-radius: .6rem;
+  border-radius: 0 .6rem .6rem 0;  /* Only round right corners */
+  flex: 1;
 }
 
 /* Exact-fit height for Windy forecast-only widgets (no map) */
 .twocol .right iframe[src*="embed.windy.com/embed.html"][src*="type=forecast"] {
-  height: 188px !important;    /* ~187–190px fits without gray on desktop */
+  height: 140px !important;    /* Reduced height to make forecast tables less tall */
 }
 
 /* ---- Responsive tweaks ---- */
 @media (max-width: 900px) {
   .twocol { grid-template-columns: 1fr; }
-  .twocol .right { grid-column: 1; }
+  .twocol .right { grid-column: 1; gap: .3rem; }
   .card--dwd .dwd-img {
     max-height: clamp(260px, calc(var(--fit-h) * 0.55), 620px);
   }
   .twocol .right iframe[src*="embed.windy.com/embed.html"][src*="type=forecast"] {
-    height: 220px !important;  /* touch-friendly on small screens */
+    height: 160px !important;  /* Reduced height for small screens */
+  }
+  
+  /* On mobile, make titles even more compact */
+  .twocol .right .card--spot .card__title {
+    min-width: 2rem;
+    max-width: 2rem;
+    font-size: 0.75rem;
   }
 }
 
