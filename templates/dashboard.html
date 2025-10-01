@@ -20,95 +20,99 @@
     </nav>
   </header>
 
-  <main class="grid">
+  <!-- Two-column layout: left DWD, right vertical stack of widgets -->
+  <main class="twocol">
     {% if show_dwd %}
-        <section class="card card--wide">
+    <section class="left">
+      <div class="card card--dwd">
         <div class="card__title">DWD – Großwetterlage & Prognosen</div>
         <div class="card__content">
-            <img id="dwd-rotator" class="frame dwd" alt="DWD Großwetterlage" />
-            <div class="muted" style="margin-top:.4rem">
+          <img id="dwd-rotator" class="dwd-img" alt="DWD Großwetterlage" />
+          <div class="muted" style="margin-top:.4rem">
             <small>Analysis shows for 30 s, then forecasts cycle every 5 s.</small>
-            </div>
+          </div>
         </div>
-        </section>
+      </div>
 
-        <script>
+      <script>
         (function () {
-            const version = "{{ dwd_version }}"; // daily cache-buster
-            const frames = [
+          const version = "{{ dwd_version }}"; // daily cache-buster
+          const frames = [
             { src: "/dwd/main.png?d=" + version,  duration: 30000 }, // 30s analysis
             { src: "/dwd/v036.png?d=" + version,  duration: 5000  },
             { src: "/dwd/v048.png?d=" + version,  duration: 5000  },
             { src: "/dwd/v060.png?d=" + version,  duration: 5000  },
             { src: "/dwd/v084.png?d=" + version,  duration: 5000  },
             { src: "/dwd/v108.png?d=" + version,  duration: 5000  },
-            ];
+          ];
 
-            // Preload so switching is instant
-            frames.forEach(f => { const img = new Image(); img.src = f.src; });
+          // Preload so switching is instant
+          frames.forEach(f => { const img = new Image(); img.src = f.src; });
 
-            const img = document.getElementById("dwd-rotator");
-            let idx = 0;
+          const img = document.getElementById("dwd-rotator");
+          let idx = 0;
 
-            function show(i) {
+          function show(i) {
             img.src = frames[i].src;
             img.dataset.idx = String(i);
-            }
+          }
 
-            function loop() {
+          function loop() {
             show(idx);
             const ms = frames[idx].duration;
             idx = (idx + 1) % frames.length;
             setTimeout(loop, ms);
-            }
+          }
 
-            show(0);
-            setTimeout(loop, frames[0].duration);
+          show(0);
+          setTimeout(loop, frames[0].duration);
         })();
-        </script>
+      </script>
+    </section>
     {% endif %}
 
-    <script>
-        (function () {
-            function applyFit() {
-                const top = document.querySelector('.topbar')?.offsetHeight || 0;
-                const foot = document.querySelector('.footer')?.offsetHeight || 0;
-                // padding around main grid (matches .grid padding in CSS = .8rem ≈ 12–13px)
-                const padding = 16;
-                const fitH = Math.max(320, window.innerHeight - top - foot - padding);
-                document.documentElement.style.setProperty('--fit-h', fitH + 'px');
-            }
-            window.addEventListener('resize', applyFit);
-            window.addEventListener('orientationchange', applyFit);
-            // mobile Safari “100vh” fix
-            function setVhUnit() {
-                document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
-            }
-            window.addEventListener('resize', setVhUnit);
-            setVhUnit();
-            applyFit();
-        })();
-    </script>
-
-
-    {% for s in spot_cards %}
-      <section class="card">
-        <div class="card__title">{{ s.title }}</div>
-        <div class="card__content">
-          {% if s.iframe_src %}
-            <iframe
-              class="frame"
-              src="{{ s.iframe_src }}"
-              loading="lazy"
-              referrerpolicy="no-referrer"
-            ></iframe>
-          {% else %}
-            <div class="error">⚠️ Not configured correctly</div>
-          {% endif %}
+    <section class="right">
+      {% for s in spot_cards %}
+        <div class="card card--spot">
+          <div class="card__title">{{ s.title }}</div>
+          <div class="card__content">
+            {% if s.iframe_src %}
+              <iframe
+                class="frame spot-frame"
+                src="{{ s.iframe_src }}"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+              ></iframe>
+            {% else %}
+              <div class="error">⚠️ Not configured correctly</div>
+            {% endif %}
+          </div>
         </div>
-      </section>
-    {% endfor %}
+      {% endfor %}
+    </section>
   </main>
+
+  <!-- Fit-to-viewport helpers -->
+  <script>
+    (function () {
+      function applyFit() {
+        const top = document.querySelector('.topbar')?.offsetHeight || 0;
+        const foot = document.querySelector('.footer')?.offsetHeight || 0;
+        const padding = 16; // matches layout padding
+        const fitH = Math.max(320, window.innerHeight - top - foot - padding);
+        document.documentElement.style.setProperty('--fit-h', fitH + 'px');
+      }
+      window.addEventListener('resize', applyFit);
+      window.addEventListener('orientationchange', applyFit);
+      // mobile Safari “100vh” fix
+      function setVhUnit() {
+        document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+      }
+      window.addEventListener('resize', setVhUnit);
+      setVhUnit();
+      applyFit();
+    })();
+  </script>
 
   <footer class="footer">
     <div>
@@ -129,10 +133,6 @@
       let idx = views.indexOf(current);
       if (idx < 0) idx = 0;
 
-      // Rotate by switching window.location to next /view/<name>.
-      // NOTE: To comply with Windfinder “no auto-refresh”, we can also implement
-      // a mode that *does not* reload the page but toggles sections. For now we
-      // rotate the whole view only if Windfinder is not present.
       const hasWindfinder = !!document.querySelector('iframe[src*="windfinder.com"]');
 
       if (!hasWindfinder) {
@@ -141,9 +141,9 @@
           window.location.href = "/view/" + views[idx];
         }, intervalMs);
       } else {
-        // Soft-rotate (no page reload): cycle visible cards every interval
-        const cards = Array.from(document.querySelectorAll("main.grid > .card, .card--wide"));
-        let visibleCount = Math.min(3, cards.length); // show first 3 by default
+        // Soft-rotate (no page reload): cycle visible spot cards
+        const cards = Array.from(document.querySelectorAll("main.twocol .right > .card, main.twocol .left > .card"));
+        let visibleCount = Math.min(3, cards.length);
         let start = 0;
 
         function updateVisibility() {
