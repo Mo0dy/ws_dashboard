@@ -4,15 +4,14 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import yaml
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
 from datetime import datetime, timezone, date
 import asyncio
 import httpx
-from fastapi.responses import FileResponse
 
 APP_DIR = Path(__file__).parent.resolve()
 TEMPLATES_DIR = APP_DIR / "templates"
@@ -24,6 +23,7 @@ app = FastAPI(title="Windsurf Dashboard (Southern Germany)")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+# --- DWD images and caching ---
 DWD_IMAGES = {
     "main": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/bwk_bodendruck_na_ana.png",
     "v036": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_v36.png",
@@ -51,24 +51,23 @@ async def _fetch_and_cache(url: str, dst: Path) -> None:
         tmp.write_bytes(r.content)
         tmp.replace(dst)
 
-
+# --- config ---
 def load_config() -> Dict[str, Any]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
-    # Normalize
     cfg.setdefault("views", [])
     cfg.setdefault("rotation", {"enabled": False, "interval_seconds": 30})
     cfg.setdefault("spots", {})
     return cfg
 
+# --- Windy/Windfinder URL builders ---
 def windy_iframe_src(lat: float, lon: float, opts: Dict[str, Any]) -> str:
-    # Windy embed parameters reference: https://embed.windy.com/
+    # Map embed (with map)
     zoom = opts.get("zoom", 10)
     overlay = opts.get("overlay", "wind")
     marker = "true" if opts.get("marker", True) else "false"
     detail = "true" if opts.get("detail", True) else "false"
     units_wind = opts.get("units_wind", "kmh")  # kmh, ms, kt, mph, bft
-    # Use embed2.html (new). location=coordinates shows lat/lon in URL
     return (
         "https://embed.windy.com/embed2.html"
         f"?lat={lat:.5f}&lon={lon:.5f}"
@@ -83,13 +82,28 @@ def windy_iframe_src(lat: float, lon: float, opts: Dict[str, Any]) -> str:
         f"&metricTemp=C"
     )
 
+def windy_forecast_iframe_src(lat: float, lon: float, opts: dict) -> str:
+    """
+    Windy forecast-only (no map) widget.
+    Docs/example come from the Windy embed configurator; this endpoint is supported.
+    """
+    units_wind = opts.get("units_wind", "kmh")  # kmh, ms, kt, mph, bft
+    # You can also pass metricRain=mm and metricTemp=C explicitly
+    return (
+        "https://embed.windy.com/embed.html"
+        "?type=forecast"
+        "&location=coordinates"
+        "&detail=true"
+        f"&detailLat={lat:.5f}&detailLon={lon:.5f}"
+        f"&metricWind={units_wind}"
+        "&metricTemp=C"
+        "&metricRain=mm"
+    )
+
 def windfinder_iframe_src(widget_src: str) -> str:
-    # Windfinder provides a full <iframe>. We only store the src URL in config.
-    # Rules: up to 3 widgets per page, no auto-refresh. We rotate views without reloading the page.
-    # https://www.windfinder.com/apps/homepageweather + https://www.windfinder.com/help/other/widgets.htm
     return widget_src
 
-
+# --- DWD endpoints ---
 @app.get("/dwd/{name}.png")
 async def dwd_image(name: str):
     if name not in DWD_IMAGES:
@@ -98,21 +112,18 @@ async def dwd_image(name: str):
     url = DWD_IMAGES[name]
     out = CACHE_DIR / f"{name}.png"
 
-    # fetch once per day
     if not _is_fresh(out, max_age_hours=24):
         lock = _dwd_locks[name]
         async with lock:
             if not _is_fresh(out, max_age_hours=24):
                 await _fetch_and_cache(url, out)
 
-    # mild browser caching; daily cache-buster in template handles the rest
     headers = {"Cache-Control": "public, max-age=3600"}
     return FileResponse(out, media_type="image/png", headers=headers)
 
-
+# --- Routes ---
 @app.get("/", response_class=HTMLResponse)
 def root():
-    # Redirect to first view for convenience
     cfg = load_config()
     if cfg["views"]:
         return RedirectResponse(url=f"/view/{cfg['views'][0]['name']}")
@@ -128,28 +139,29 @@ def view_page(request: Request, view_name: str):
 
     view = next(v for v in views if v["name"] == view_name)
 
-    # Build cards (DWD + spots)
     show_dwd = bool(view.get("show_dwd", False))
-
     spot_cards = []
+
+    # MAIN DASHBOARD: Windy -> forecast widget (no map); Windfinder -> as-is
     for spot_name in view.get("spots", []):
         spec = cfg["spots"].get(spot_name)
         if not spec:
-            spot_cards.append({"title": f"{spot_name} (missing in config)", "iframe_src": None})
+            spot_cards.append({"title": f"{spot_name} (missing in config)", "iframe_src": None, "detail_link": None})
             continue
 
         provider = spec.get("provider", "windy").lower()
         title = spot_name
         iframe_src = None
+        detail_link = f"/spot/{spot_name}"
 
         if provider == "windy":
-            lat = spec.get("lat")
-            lon = spec.get("lon")
+            lat = spec.get("lat"); lon = spec.get("lon")
             windy_opts = spec.get("windy", {})
             if lat is None or lon is None:
-                spot_cards.append({"title": f"{title} (missing lat/lon)", "iframe_src": None})
+                spot_cards.append({"title": f"{title} (missing lat/lon)", "iframe_src": None, "detail_link": None})
             else:
-                iframe_src = windy_iframe_src(lat, lon, windy_opts)
+                # Use forecast-only widget on main dashboard
+                iframe_src = windy_forecast_iframe_src(lat, lon, windy_opts)
 
         elif provider == "windfinder":
             wf = spec.get("windfinder", {})
@@ -157,13 +169,13 @@ def view_page(request: Request, view_name: str):
             if src:
                 iframe_src = windfinder_iframe_src(src)
             else:
-                spot_cards.append({"title": f"{title} (missing windfinder.widget_src)", "iframe_src": None})
+                spot_cards.append({"title": f"{title} (missing windfinder.widget_src)", "iframe_src": None, "detail_link": None})
 
         else:
-            spot_cards.append({"title": f"{title} (unknown provider: {provider})", "iframe_src": None})
+            spot_cards.append({"title": f"{title} (unknown provider: {provider})", "iframe_src": None, "detail_link": None})
 
         if iframe_src:
-            spot_cards.append({"title": title, "iframe_src": iframe_src})
+            spot_cards.append({"title": title, "iframe_src": iframe_src, "detail_link": detail_link})
 
     rotation = cfg.get("rotation", {})
     return templates.TemplateResponse(
@@ -176,6 +188,50 @@ def view_page(request: Request, view_name: str):
             "spot_cards": spot_cards,
             "rotation_enabled": bool(rotation.get("enabled", False)),
             "rotation_interval": int(rotation.get("interval_seconds", 30)),
-            "dwd_version": date.today().strftime("%y%m%d"),
+            "compact": True,  # main dashboard shows forecast tables (no map)
+            "dwd_version": date.today().strftime("%Y%m%d"),
+        },
+    )
+
+@app.get("/spot/{spot_name}", response_class=HTMLResponse)
+def spot_detail(request: Request, spot_name: str):
+    """Detail page for a single spot: Windy map (or Windfinder widget)."""
+    cfg = load_config()
+    spec = cfg["spots"].get(spot_name)
+    if not spec:
+        raise HTTPException(status_code=404, detail="Unknown spot")
+
+    provider = spec.get("provider", "windy").lower()
+    title = spot_name
+    iframe_src = None
+
+    if provider == "windy":
+        lat = spec.get("lat"); lon = spec.get("lon")
+        windy_opts = spec.get("windy", {})
+        if lat is not None and lon is not None:
+            # DETAIL PAGE -> show the map
+            iframe_src = windy_iframe_src(lat, lon, windy_opts)
+    elif provider == "windfinder":
+        src = spec.get("windfinder", {}).get("widget_src")
+        if src:
+            iframe_src = src
+
+    spot_cards = []
+    if iframe_src:
+        spot_cards.append({"title": title, "iframe_src": iframe_src, "detail_link": None})
+
+    # You can choose to keep DWD on the left on detail pages; set to False if not desired.
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {
+            "request": request,
+            "current_view": f"spot:{spot_name}",
+            "views": [],                 # hide top view tabs on detail (optional)
+            "show_dwd": True,
+            "spot_cards": spot_cards,
+            "rotation_enabled": False,   # usually no rotation on detail
+            "rotation_interval": 30,
+            "compact": False,            # detail -> maps
+            "dwd_version": date.today().strftime("%Y%m%d"),
         },
     )

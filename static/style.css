@@ -4,6 +4,10 @@
   --muted: #99a3ad;
   --card: #12161a;
   --accent: #46a0ff;
+
+  /* viewport-fitting vars (set by JS; have sane defaults) */
+  --vh: 1vh;
+  --fit-h: 70vh;
 }
 
 * { box-sizing: border-box; }
@@ -43,6 +47,8 @@ body {
   grid-template-columns: repeat(12, 1fr);
   gap: .8rem;
   padding: .8rem;
+  /* prevent accidental page scroll when sizing to viewport */
+  overflow: hidden;
 }
 
 .card {
@@ -75,6 +81,7 @@ body {
 
 .card__content { padding: .6rem; }
 
+/* Default frame sizing (overridden below for specific cases) */
 .frame {
   width: 100%;
   height: 420px;
@@ -82,17 +89,41 @@ body {
   border-radius: .6rem;
 }
 
+/* DWD image: preserve aspect ratio, fit to available viewport height */
 .card--wide .frame.dwd {
-  max-height: 650px;     /* limit vertical size */
-  width: auto;           /* don't force stretch */
-  height: auto;          /* browser scales proportionally */
+  /* keep intrinsic aspect; never distort */
+  width: 100%;
+  height: auto;
   display: block;
-  margin: 0 auto;        /* center horizontally */
-  background: #0b0e11;   /* dark padding background */
+  object-fit: contain;
+  background: #0b0e11;
+  margin: 0 auto;
+
+  /* cap by available viewport height; adjust proportions as needed */
+  max-height: clamp(300px, calc(var(--fit-h) * 0.60), 700px);
+}
+
+/* Spot cards (Windy/Windfinder iframes) get a proportional height too */
+.card .frame {
+  height: clamp(220px, calc(var(--fit-h) * 0.35), 520px);
+  width: 100%;
+  border: none;
+  border-radius: .6rem;
+}
+
+/* On portrait devices, bias more height to the DWD map */
+@media (orientation: portrait) {
+  .card--wide .frame.dwd {
+    max-height: clamp(280px, calc(var(--fit-h) * 0.65), 680px);
+  }
+  .card .frame {
+    height: clamp(200px, calc(var(--fit-h) * 0.30), 480px);
+  }
 }
 
 .footer {
   padding: .6rem 1rem 1rem;
   color: var(--muted);
 }
+
 .error { color: #ff7b7b; }
