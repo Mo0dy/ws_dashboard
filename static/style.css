@@ -83,7 +83,12 @@ body {
 }
 
 .card--wide .frame.dwd {
-  height: 650px;
+  max-height: 650px;     /* limit vertical size */
+  width: auto;           /* don't force stretch */
+  height: auto;          /* browser scales proportionally */
+  display: block;
+  margin: 0 auto;        /* center horizontally */
+  background: #0b0e11;   /* dark padding background */
 }
 
 .footer {

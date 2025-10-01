@@ -41,3 +41,6 @@ Thumbs.db
 # Config file may be local-only if it has secrets.
 # Comment out if you want to commit a sample version.
 config.yaml
+
+# Cached DWD images
+cache/

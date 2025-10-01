@@ -22,17 +22,51 @@
 
   <main class="grid">
     {% if show_dwd %}
-      <section class="card card--wide">
-        <div class="card__title">DWD – Großwetterlage Europa</div>
+        <section class="card card--wide">
+        <div class="card__title">DWD – Großwetterlage & Prognosen</div>
         <div class="card__content">
-          <iframe
-            class="frame dwd"
-            src="{{ dwd_url }}"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-          ></iframe>
+            <img id="dwd-rotator" class="frame dwd" alt="DWD Großwetterlage" />
+            <div class="muted" style="margin-top:.4rem">
+            <small>Analysis shows for 30 s, then forecasts cycle every 5 s.</small>
+            </div>
         </div>
-      </section>
+        </section>
+
+        <script>
+        (function () {
+            const version = "{{ dwd_version }}"; // daily cache-buster
+            const frames = [
+            { src: "/dwd/main.png?d=" + version,  duration: 30000 }, // 30s analysis
+            { src: "/dwd/v036.png?d=" + version,  duration: 5000  },
+            { src: "/dwd/v048.png?d=" + version,  duration: 5000  },
+            { src: "/dwd/v060.png?d=" + version,  duration: 5000  },
+            { src: "/dwd/v084.png?d=" + version,  duration: 5000  },
+            { src: "/dwd/v108.png?d=" + version,  duration: 5000  },
+            ];
+
+            // Preload so switching is instant
+            frames.forEach(f => { const img = new Image(); img.src = f.src; });
+
+            const img = document.getElementById("dwd-rotator");
+            let idx = 0;
+
+            function show(i) {
+            img.src = frames[i].src;
+            img.dataset.idx = String(i);
+            }
+
+            function loop() {
+            show(idx);
+            const ms = frames[idx].duration;
+            idx = (idx + 1) % frames.length;
+            setTimeout(loop, ms);
+            }
+
+            show(0);
+            setTimeout(loop, frames[0].duration);
+        })();
+        </script>
+
     {% endif %}
 
     {% for s in spot_cards %}

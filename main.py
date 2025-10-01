@@ -9,6 +9,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from datetime import datetime, timezone, date
+import asyncio
+import httpx
+from fastapi.responses import FileResponse
+
 APP_DIR = Path(__file__).parent.resolve()
 TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"
@@ -18,6 +23,34 @@ app = FastAPI(title="Windsurf Dashboard (Southern Germany)")
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+DWD_IMAGES = {
+    "main": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/bwk_bodendruck_na_ana.png",
+    "v036": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_v36.png",
+    "v048": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_048.png",
+    "v060": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_060.png",
+    "v084": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_084.png",
+    "v108": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_108.png",
+}
+CACHE_DIR = APP_DIR / "cache" / "dwd"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+_dwd_locks = {name: asyncio.Lock() for name in DWD_IMAGES.keys()}
+
+def _is_fresh(path: Path, max_age_hours: int = 24) -> bool:
+    if not path.exists():
+        return False
+    age = datetime.now(timezone.utc).timestamp() - path.stat().st_mtime
+    return age < max_age_hours * 3600
+
+async def _fetch_and_cache(url: str, dst: Path) -> None:
+    async with httpx.AsyncClient(timeout=20) as client:
+        r = await client.get(url)
+        r.raise_for_status()
+        tmp = dst.with_suffix(".tmp")
+        tmp.write_bytes(r.content)
+        tmp.replace(dst)
+
 
 def load_config() -> Dict[str, Any]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
@@ -56,6 +89,27 @@ def windfinder_iframe_src(widget_src: str) -> str:
     # https://www.windfinder.com/apps/homepageweather + https://www.windfinder.com/help/other/widgets.htm
     return widget_src
 
+
+@app.get("/dwd/{name}.png")
+async def dwd_image(name: str):
+    if name not in DWD_IMAGES:
+        return HTMLResponse("Unknown DWD image", status_code=404)
+
+    url = DWD_IMAGES[name]
+    out = CACHE_DIR / f"{name}.png"
+
+    # fetch once per day
+    if not _is_fresh(out, max_age_hours=24):
+        lock = _dwd_locks[name]
+        async with lock:
+            if not _is_fresh(out, max_age_hours=24):
+                await _fetch_and_cache(url, out)
+
+    # mild browser caching; daily cache-buster in template handles the rest
+    headers = {"Cache-Control": "public, max-age=3600"}
+    return FileResponse(out, media_type="image/png", headers=headers)
+
+
 @app.get("/", response_class=HTMLResponse)
 def root():
     # Redirect to first view for convenience
@@ -76,7 +130,6 @@ def view_page(request: Request, view_name: str):
 
     # Build cards (DWD + spots)
     show_dwd = bool(view.get("show_dwd", False))
-    dwd_url = "https://www.dwd.de/DE/leistungen/hobbymet_wk_europa/hobbyeuropakarten.html"
 
     spot_cards = []
     for spot_name in view.get("spots", []):
@@ -120,9 +173,9 @@ def view_page(request: Request, view_name: str):
             "current_view": view_name,
             "views": view_names,
             "show_dwd": show_dwd,
-            "dwd_url": dwd_url,
             "spot_cards": spot_cards,
             "rotation_enabled": bool(rotation.get("enabled", False)),
             "rotation_interval": int(rotation.get("interval_seconds", 30)),
+            "dwd_version": date.today().strftime("%y%m%d"),
         },
     )
