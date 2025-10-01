@@ -110,7 +110,8 @@
       const rightContainer = document.querySelector('.twocol .right');
       if (!rightContainer) return;
       
-      let autoScrollTimer;
+      let autoScrollInterval;
+      let autoScrollTimeout;
       let userInteracting = false;
       let currentCardIndex = 0;
       const cards = rightContainer.querySelectorAll('.card--spot');
@@ -130,19 +131,33 @@
         }
       }
       
+      // Start auto-scroll
+      function startAutoScroll() {
+        const scrollInterval = cards.length > 0 ? Math.max(45000 / cards.length, 1000) : 45000; // Complete cycle in 45s, min 1s per card
+        autoScrollInterval = setInterval(autoScroll, scrollInterval);
+      }
+      
+      // Stop auto-scroll
+      function stopAutoScroll() {
+        clearInterval(autoScrollInterval);
+        clearTimeout(autoScrollTimeout);
+        autoScrollInterval = null;
+        autoScrollTimeout = null;
+      }
+      
       // Reset auto-scroll timer
       function resetAutoScroll() {
-        clearTimeout(autoScrollTimer);
+        stopAutoScroll();
         userInteracting = false;
-        autoScrollTimer = setTimeout(() => {
-          setInterval(autoScroll, 4000); // Scroll every 4 seconds
-        }, 5000); // Wait 5 seconds after user stops interacting
+        autoScrollTimeout = setTimeout(() => {
+          startAutoScroll();
+        }, 60000); // Wait 60 seconds (1 minute) after user stops interacting
       }
       
       // Track user interaction
       function onUserInteraction() {
         userInteracting = true;
-        clearTimeout(autoScrollTimer);
+        stopAutoScroll();
         resetAutoScroll();
       }
       
@@ -155,7 +170,7 @@
       
       // Start auto-scroll after initial delay
       setTimeout(() => {
-        setInterval(autoScroll, 4000);
+        startAutoScroll();
       }, 3000); // Initial delay of 3 seconds
       
     })();
