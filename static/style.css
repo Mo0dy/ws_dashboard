@@ -82,6 +82,9 @@ body {
   flex-direction: row;
   align-items: stretch;
   overflow: hidden;
+  margin-bottom: .4rem;  /* Add margin instead of gap since we're using block layout */
+  flex-shrink: 0;  /* Prevent cards from shrinking */
+  min-height: 185px;  /* Increased by 10px to match iframe height */
 }
 
 .twocol .right .card--spot .card__title {
@@ -141,11 +144,33 @@ body {
   max-height: clamp(320px, calc(var(--fit-h) * 0.6), 680px);
 }
 
-/* Right column (stacked forecast widgets) */
+/* Right column (scrollable forecast widgets container) */
 .twocol .right {
   grid-column: 2;
-  display: grid;
-  gap: .4rem;  /* Reduced gap to stack closer */
+  display: block;  /* Changed from flex to block to prevent squishing */
+  height: calc(var(--fit-h));
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: .4rem; /* Space for scrollbar */
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #46a0ff #20262c;
+}
+
+/* Webkit scrollbar styling */
+.twocol .right::-webkit-scrollbar {
+  width: 6px;
+}
+.twocol .right::-webkit-scrollbar-track {
+  background: #20262c;
+  border-radius: 3px;
+}
+.twocol .right::-webkit-scrollbar-thumb {
+  background: #46a0ff;
+  border-radius: 3px;
+}
+.twocol .right::-webkit-scrollbar-thumb:hover {
+  background: #5eb0ff;
 }
 
 /* Default spot frame behavior:
@@ -153,7 +178,7 @@ body {
 .twocol .right .spot-frame {
   width: 100%;
   height: auto;
-  min-height: 160px;           /* safety floor */
+  min-height: 185px;           /* safety floor */
   border: none;
   border-radius: 0 .6rem .6rem 0;  /* Only round right corners */
   flex: 1;
@@ -161,18 +186,28 @@ body {
 
 /* Exact-fit height for Windy forecast-only widgets (no map) */
 .twocol .right iframe[src*="embed.windy.com/embed.html"][src*="type=forecast"] {
-  height: 140px !important;    /* Reduced height to make forecast tables less tall */
+  height: 160px !important;    /* Increased by 10px for complete visibility */
+  flex-shrink: 0 !important;   /* Prevent iframe from shrinking */
 }
 
 /* ---- Responsive tweaks ---- */
 @media (max-width: 900px) {
   .twocol { grid-template-columns: 1fr; }
-  .twocol .right { grid-column: 1; gap: .3rem; }
+  .twocol .right { 
+    grid-column: 1; 
+    gap: .3rem;
+    height: calc(var(--fit-h) * 0.6); /* Smaller height on mobile */
+  }
   .card--dwd .dwd-img {
-    max-height: clamp(260px, calc(var(--fit-h) * 0.55), 620px);
+    max-height: clamp(260px, calc(var(--fit-h) * 0.35), 400px); /* Reduced to make room for scrollable area */
   }
   .twocol .right iframe[src*="embed.windy.com/embed.html"][src*="type=forecast"] {
-    height: 160px !important;  /* Reduced height for small screens */
+    height: 180px !important;  /* Increased by 10px for mobile screens */
+    flex-shrink: 0 !important;   /* Prevent iframe from shrinking on mobile */
+  }
+  
+  .twocol .right .card--spot {
+    min-height: 180px;  /* Match mobile iframe height */
   }
   
   /* On mobile, make titles even more compact */

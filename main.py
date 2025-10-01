@@ -84,9 +84,9 @@ def windy_forecast_iframe_src(lat: float, lon: float, opts: dict) -> str:
     """
     Windy forecast-only (no map) widget.
     Docs/example come from the Windy embed configurator; this endpoint is supported.
+    Modified to show only wind data for more compact display.
     """
     units_wind = opts.get("units_wind", "kmh")  # kmh, ms, kt, mph, bft
-    # You can also pass metricRain=mm and metricTemp=C explicitly
     return (
         "https://embed.windy.com/embed.html"
         "?type=forecast"
@@ -94,8 +94,10 @@ def windy_forecast_iframe_src(lat: float, lon: float, opts: dict) -> str:
         "&detail=true"
         f"&detailLat={lat:.5f}&detailLon={lon:.5f}"
         f"&metricWind={units_wind}"
-        "&metricTemp=C"
-        "&metricRain=mm"
+        "&overlay=wind"
+        "&isolines=0"
+        "&airportIdent="
+        "&showAirports=false"
     )
 
 def windfinder_iframe_src(widget_src: str) -> str:

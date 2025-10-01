@@ -103,6 +103,65 @@
     })();
   </script>
 
+  <!-- Auto-scroll functionality for forecast widgets -->
+  {% if compact and show_dwd %}
+  <script>
+    (function () {
+      const rightContainer = document.querySelector('.twocol .right');
+      if (!rightContainer) return;
+      
+      let autoScrollTimer;
+      let userInteracting = false;
+      let currentCardIndex = 0;
+      const cards = rightContainer.querySelectorAll('.card--spot');
+      
+      // Auto-scroll function
+      function autoScroll() {
+        if (userInteracting || cards.length === 0) return;
+        
+        currentCardIndex = (currentCardIndex + 1) % cards.length;
+        const targetCard = cards[currentCardIndex];
+        
+        if (targetCard) {
+          targetCard.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }
+      
+      // Reset auto-scroll timer
+      function resetAutoScroll() {
+        clearTimeout(autoScrollTimer);
+        userInteracting = false;
+        autoScrollTimer = setTimeout(() => {
+          setInterval(autoScroll, 4000); // Scroll every 4 seconds
+        }, 5000); // Wait 5 seconds after user stops interacting
+      }
+      
+      // Track user interaction
+      function onUserInteraction() {
+        userInteracting = true;
+        clearTimeout(autoScrollTimer);
+        resetAutoScroll();
+      }
+      
+      // Add event listeners for user interaction
+      rightContainer.addEventListener('scroll', onUserInteraction);
+      rightContainer.addEventListener('wheel', onUserInteraction);
+      rightContainer.addEventListener('touchstart', onUserInteraction);
+      rightContainer.addEventListener('touchmove', onUserInteraction);
+      rightContainer.addEventListener('mousedown', onUserInteraction);
+      
+      // Start auto-scroll after initial delay
+      setTimeout(() => {
+        setInterval(autoScroll, 4000);
+      }, 3000); // Initial delay of 3 seconds
+      
+    })();
+  </script>
+  {% endif %}
+
   <footer class="footer">
     <div>
       <small>Windy & Windfinder content © their providers.</small>
