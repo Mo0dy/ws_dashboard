@@ -240,10 +240,11 @@ body {
 .single { padding: .8rem; }
 .single .single-body { display: block; }
 
-/* Make the map truly fullscreen (minus header/footer) */
+/* Make the map fit properly within the viewport (accounting for card title and padding) */
 .map-embed {
   width: 100%;
-  height: calc(var(--fit-h));
+  height: calc(var(--fit-h) - 60px); /* Increased padding for better bottom spacing */
+  min-height: 400px; /* Ensure minimum usable height */
   border: none;
   border-radius: .6rem;
   display: block;
@@ -251,3 +252,11 @@ body {
 
 /* Reduce padding around the map card so it fills nicely */
 .card--map .card__content { padding: .4rem; }
+
+/* On smaller screens, adjust the height calculation */
+@media (max-height: 600px) {
+  .map-embed {
+    height: calc(var(--fit-h) - 120px); /* More padding on smaller screens too */
+    min-height: 300px;
+  }
+}
