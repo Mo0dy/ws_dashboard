@@ -32,12 +32,13 @@ DWD_IMAGES = {
     "v084": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_084.png",
     "v108": "https://www.dwd.de/DWD/wetter/wv_spez/hobbymet/wetterkarten/ico_tkboden_na_108.png",
 }
+
 CACHE_DIR = APP_DIR / "cache" / "dwd"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 _dwd_locks = {name: asyncio.Lock() for name in DWD_IMAGES.keys()}
 
-def _is_fresh(path: Path, max_age_hours: int = 24) -> bool:
+def _is_fresh(path: Path, max_age_hours: int = 2) -> bool:
     if not path.exists():
         return False
     age = datetime.now(timezone.utc).timestamp() - path.stat().st_mtime
@@ -112,10 +113,10 @@ async def dwd_image(name: str):
     url = DWD_IMAGES[name]
     out = CACHE_DIR / f"{name}.png"
 
-    if not _is_fresh(out, max_age_hours=24):
+    if not _is_fresh(out, max_age_hours=2):
         lock = _dwd_locks[name]
         async with lock:
-            if not _is_fresh(out, max_age_hours=24):
+            if not _is_fresh(out, max_age_hours=2):
                 await _fetch_and_cache(url, out)
 
     headers = {"Cache-Control": "public, max-age=3600"}
