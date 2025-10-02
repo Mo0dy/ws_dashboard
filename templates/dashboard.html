@@ -50,10 +50,61 @@
         frames.forEach(f => { const im = new Image(); im.src = f.src; });
         const img = document.getElementById("dwd-rotator");
         let i = 0;
+        let autoTimer = null;
+        let userInteracting = false;
+        
         function show() {
           img.src = frames[i].src;
-          setTimeout(() => { i = (i + 1) % frames.length; show(); }, frames[i].duration);
+          if (!userInteracting) {
+            autoTimer = setTimeout(() => { 
+              i = (i + 1) % frames.length; 
+              show(); 
+            }, frames[i].duration);
+          }
         }
+        
+        function nextImage() {
+          i = (i + 1) % frames.length;
+          img.src = frames[i].src;
+        }
+        
+        function stopAutoRotation() {
+          if (autoTimer) {
+            clearTimeout(autoTimer);
+            autoTimer = null;
+          }
+          userInteracting = true;
+        }
+        
+        function restartAutoRotation() {
+          userInteracting = false;
+          if (autoTimer) {
+            clearTimeout(autoTimer);
+          }
+          autoTimer = setTimeout(() => { 
+            i = (i + 1) % frames.length; 
+            show(); 
+          }, frames[i].duration);
+        }
+        
+        // Add click/tap functionality
+        img.addEventListener('click', function(e) {
+          e.preventDefault();
+          stopAutoRotation();
+          nextImage();
+          // Restart auto-rotation after 10 seconds of no interaction
+          setTimeout(() => {
+            if (userInteracting) {
+              restartAutoRotation();
+            }
+          }, 10000);
+        });
+        
+        // Make the image clickable by adding cursor pointer
+        img.style.cursor = 'pointer';
+        img.style.userSelect = 'none';
+        
+        // Start the automatic rotation
         show();
       })();
       </script>

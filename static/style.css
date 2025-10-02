@@ -142,6 +142,18 @@ body {
   background: #0b0e11;
   border-radius: .6rem;
   max-height: clamp(320px, calc(var(--fit-h) * 0.6), 680px);
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.card--dwd .dwd-img:hover {
+  transform: scale(1.005);
+  box-shadow: 0 2px 8px rgba(70, 160, 255, 0.2);
+}
+
+.card--dwd .dwd-img:active {
+  transform: scale(0.995);
 }
 
 /* Right column (scrollable forecast widgets container) */
