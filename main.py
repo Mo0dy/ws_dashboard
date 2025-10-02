@@ -56,10 +56,32 @@ async def _fetch_and_cache(url: str, dst: Path) -> None:
 def load_config() -> Dict[str, Any]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
-    cfg.setdefault("views", [])
     cfg.setdefault("rotation", {"enabled": False, "interval_seconds": 30})
     cfg.setdefault("spots", {})
     return cfg
+
+def generate_views_from_spots(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Generate views automatically from spots configuration."""
+    spots = cfg.get("spots", {})
+    views = []
+    
+    # Main overview view that shows DWD and forecasts for all spots
+    if spots:
+        views.append({
+            "name": "overview",
+            "show_dwd": True,
+            "spots": list(spots.keys())
+        })
+    
+    # Individual detail views for each spot (show_dwd=false)
+    for spot_name in spots.keys():
+        views.append({
+            "name": spot_name,
+            "show_dwd": False,
+            "spots": [spot_name]
+        })
+    
+    return views
 
 # --- Windy/Windfinder URL builders ---
 def windy_iframe_src(lat: float, lon: float, opts: Dict[str, Any]) -> str:
@@ -132,14 +154,15 @@ async def dwd_image(name: str):
 @app.get("/", response_class=HTMLResponse)
 def root():
     cfg = load_config()
-    if cfg["views"]:
-        return RedirectResponse(url=f"/view/{cfg['views'][0]['name']}")
-    return HTMLResponse("<h1>No views configured. Please edit config.yaml</h1>")
+    views = generate_views_from_spots(cfg)
+    if views:
+        return RedirectResponse(url=f"/view/{views[0]['name']}")
+    return HTMLResponse("<h1>No spots configured. Please edit config.yaml</h1>")
 
 @app.get("/view/{view_name}", response_class=HTMLResponse)
 def view_page(request: Request, view_name: str):
     cfg = load_config()
-    views: List[Dict[str, Any]] = cfg["views"]
+    views: List[Dict[str, Any]] = generate_views_from_spots(cfg)
     view_names = [v["name"] for v in views]
     if view_name not in view_names:
         return HTMLResponse(f"<h1>Unknown view: {view_name}</h1>", status_code=404)
@@ -155,19 +178,31 @@ def view_page(request: Request, view_name: str):
     for spot_name in view.get("spots", []):
         spec = cfg["spots"].get(spot_name)
         if not spec:
-            spot_cards.append({"title": f"{spot_name} (missing in config)", "iframe_src": None, "detail_link": None})
+            spot_cards.append({
+                "title": f"{spot_name} (missing in config)", 
+                "iframe_src": None, 
+                "detail_link": None,
+                "view_link": None
+            })
             continue
 
         provider = spec.get("provider", "windy").lower()
         title = spot_name
         iframe_src = None
         detail_link = f"/spot/{spot_name}"
+        # Add link to spot view (only on overview page with multiple spots)
+        view_link = f"/view/{spot_name}" if show_dwd and len(view.get("spots", [])) > 1 else None
 
         if provider == "windy":
             lat = spec.get("lat"); lon = spec.get("lon")
             windy_opts = spec.get("windy", {})
             if lat is None or lon is None:
-                spot_cards.append({"title": f"{title} (missing lat/lon)", "iframe_src": None, "detail_link": None})
+                spot_cards.append({
+                    "title": f"{title} (missing lat/lon)", 
+                    "iframe_src": None, 
+                    "detail_link": None,
+                    "view_link": None
+                })
             else:
                 # Use map widget if DWD is not shown, forecast widget if DWD is shown
                 if use_maps:
@@ -181,13 +216,28 @@ def view_page(request: Request, view_name: str):
             if src:
                 iframe_src = windfinder_iframe_src(src)
             else:
-                spot_cards.append({"title": f"{title} (missing windfinder.widget_src)", "iframe_src": None, "detail_link": None})
+                spot_cards.append({
+                    "title": f"{title} (missing windfinder.widget_src)", 
+                    "iframe_src": None, 
+                    "detail_link": None,
+                    "view_link": None
+                })
 
         else:
-            spot_cards.append({"title": f"{title} (unknown provider: {provider})", "iframe_src": None, "detail_link": None})
+            spot_cards.append({
+                "title": f"{title} (unknown provider: {provider})", 
+                "iframe_src": None, 
+                "detail_link": None,
+                "view_link": None
+            })
 
         if iframe_src:
-            spot_cards.append({"title": title, "iframe_src": iframe_src, "detail_link": detail_link})
+            spot_cards.append({
+                "title": title, 
+                "iframe_src": iframe_src, 
+                "detail_link": detail_link,
+                "view_link": view_link
+            })
 
     rotation = cfg.get("rotation", {})
     return templates.TemplateResponse(
@@ -230,7 +280,12 @@ def spot_detail(request: Request, spot_name: str):
 
     spot_cards = []
     if iframe_src:
-        spot_cards.append({"title": title, "iframe_src": iframe_src, "detail_link": None})
+        spot_cards.append({
+            "title": title, 
+            "iframe_src": iframe_src, 
+            "detail_link": None,
+            "view_link": None
+        })
 
     # You can choose to keep DWD on the left on detail pages; set to False if not desired.
     return templates.TemplateResponse(

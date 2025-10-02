@@ -1,29 +1,6 @@
 # Generate windy widgets at:
 # https://embed.windy.com/config/forecast
 
-# Which "views" to rotate through (each view is a page state)
-views:
-  - name: overview
-    show_dwd: true
-    spots: [Epplesee, Bodensee-FN, Bodensee, Badsee, Erlichsee, Hardtsee, St-Leoner-See, Otterstadt]
-  - name: bodensee_region
-    show_dwd: false
-    spots: [Bodensee-FN, Bodensee]
-  - name: karlsruhe_region
-    show_dwd: false
-    spots: [Epplesee, Badsee, Erlichsee, Hardtsee]
-  - name: rhine_region
-    show_dwd: false
-    spots: [Iffezheim, Lauterbourg, Otterstadt, Plobsheim]
-  - name: black_forest
-    show_dwd: false
-    spots: [Schluchsee-Aha, St-Leoner-See]
-  - name: epplesee_focus
-    show_dwd: false
-    spots: [Epplesee]
-# dy widgets at:
-# https://embed.windy.com/config/forecast
-
 # Rotation behavior (set enabled: false if you don’t want auto-cycling)
 rotation:
   enabled: false

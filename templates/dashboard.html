@@ -114,7 +114,13 @@
     <section class="{% if compact %}right{% else %}single-body{% endif %}">
       {% for s in spot_cards %}
         <div class="card {% if compact %}card--spot{% else %}card--map{% endif %}">
-          <div class="card__title">{{ s.title }}</div>
+          <div class="card__title">
+            {% if s.view_link %}
+              <a href="{{ s.view_link }}" style="color: inherit; text-decoration: none;">{{ s.title }}</a>
+            {% else %}
+              {{ s.title }}
+            {% endif %}
+          </div>
           <div class="card__content">
             {% if s.iframe_src %}
               <iframe
