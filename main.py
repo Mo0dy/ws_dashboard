@@ -64,21 +64,27 @@ def load_config() -> Dict[str, Any]:
 # --- Windy/Windfinder URL builders ---
 def windy_iframe_src(lat: float, lon: float, opts: Dict[str, Any]) -> str:
     # Map embed (with map) - this should show the interactive map for detail pages
-    zoom = opts.get("zoom", 10)
+    zoom = opts.get("zoom", 6)
     overlay = opts.get("overlay", "wind")
     marker = "true" if opts.get("marker", True) else "false"
-    units_wind = opts.get("units_wind", "kmh")  # kmh, ms, kt, mph, bft
-    # For map view, we don't want detail=true as that shows forecast widget instead of map
+    units_wind = opts.get("units_wind", "default")  # default, kmh, ms, kt, mph, bft
+    product = opts.get("product", "ecmwf")
+    # Updated to include marker at specific location and pressure isolines
     return (
-        "https://embed.windy.com/embed2.html"
-        f"?lat={lat:.5f}&lon={lon:.5f}"
-        f"&zoom={zoom}"
-        "&level=surface"
-        f"&overlay={overlay}"
-        f"&marker={marker}"
+        "https://embed.windy.com/embed.html"
+        "?type=map"
         "&location=coordinates"
+        f"&metricRain=default"
+        f"&metricTemp=default"
         f"&metricWind={units_wind}"
-        f"&metricTemp=C"
+        f"&zoom={zoom}"
+        f"&overlay={overlay}"
+        f"&product={product}"
+        "&level=surface"
+        f"&lat={lat:.3f}&lon={lon:.3f}"
+        f"&detailLat={lat:.3f}&detailLon={lon:.3f}"
+        "&detail=true"
+        "&pressure=true"
     )
 
 def windy_forecast_iframe_src(lat: float, lon: float, opts: dict) -> str:
