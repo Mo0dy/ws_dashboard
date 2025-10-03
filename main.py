@@ -463,3 +463,20 @@ def config_editor(request: Request):
             "spots": cfg.get("spots", {}),
         },
     )
+
+@app.get("/config/edit/{spot_name}", response_class=HTMLResponse)
+def edit_spot_page(request: Request, spot_name: str):
+    """Edit spot page."""
+    cfg = load_config()
+    spot_config = cfg["spots"].get(spot_name)
+    if not spot_config:
+        raise HTTPException(status_code=404, detail="Spot not found")
+    
+    return templates.TemplateResponse(
+        "edit_spot.html",
+        {
+            "request": request,
+            "spot_name": spot_name,
+            "spot_config": spot_config,
+        },
+    )

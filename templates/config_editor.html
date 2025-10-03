@@ -527,9 +527,9 @@
       setTimeout(initThumbnailMaps, 100);
     });
     
-    // Placeholder for edit functionality
+    // Edit spot functionality
     function editSpot(spotName) {
-      alert(`Edit functionality for "${spotName}" coming soon!`);
+      window.location.href = `/config/edit/${encodeURIComponent(spotName)}`;
     }
   </script>
 </body>

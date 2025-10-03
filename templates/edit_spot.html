@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Edit Spot – Windsurf Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.css" />
+  <style>
+    .edit-spot {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #20262c;
+      background: var(--bg);
+      color: var(--fg);
+      border-radius: 0.4rem;
+      font-size: 1rem;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(70, 160, 255, 0.2);
+    }
+    
+    #map {
+      height: 400px;
+      width: 100%;
+      border-radius: 0.4rem;
+      margin-top: 0.5rem;
+      border: 1px solid #20262c;
+    }
+    
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: 1px solid #20262c;
+      background: var(--card);
+      color: var(--fg);
+      border-radius: 0.4rem;
+      cursor: pointer;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+    
+    .btn:hover {
+      border-color: var(--accent);
+      background: rgba(70, 160, 255, 0.1);
+    }
+    
+    .btn--primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    
+    .btn--primary:hover {
+      background: #3590ff;
+    }
+    
+    .btn--secondary {
+      background: var(--muted);
+      border-color: var(--muted);
+      color: var(--bg);
+    }
+    
+    .btn--secondary:hover {
+      background: #8996a3;
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 0.4rem;
+      color: white;
+      font-weight: 600;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.3s ease;
+    }
+    
+    .notification.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    .notification.success {
+      background: #28a745;
+    }
+    
+    .notification.error {
+      background: #dc3545;
+    }
+    
+    .current-location {
+      background: var(--card);
+      border: 1px solid #20262c;
+      border-radius: 0.4rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .current-location h3 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+    
+    .coordinates {
+      font-family: monospace;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🏄 Windsurf Dashboard – Edit Spot</div>
+    <nav class="views">
+      <a class="view" href="/config">← Back to Config</a>
+    </nav>
+  </header>
+
+  <main class="edit-spot">
+    <h2>Edit Spot: {{ spot_name }}</h2>
+    
+    <div class="current-location">
+      <h3>Current Location</h3>
+      <p><strong>Coordinates:</strong> <span class="coordinates">{{ "%.6f"|format(spot_config.lat) }}, {{ "%.6f"|format(spot_config.lon) }}</span></p>
+      <p><strong>Provider:</strong> {{ spot_config.provider | default('windy') }}</p>
+      {% if spot_config.windy %}
+      <p><strong>Settings:</strong> {{ spot_config.windy.overlay | default('wind') }} overlay, {{ spot_config.windy.units_wind | default('kmh') }} units, zoom {{ spot_config.windy.zoom | default(10) }}</p>
+      {% endif %}
+    </div>
+    
+    <form id="edit-spot-form">
+      <div class="form-group">
+        <label for="spot-name">Spot Name</label>
+        <input type="text" id="spot-name" name="name" value="{{ spot_name }}" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="map">Update Location</label>
+        <div id="map"></div>
+        <small class="muted">Search for a location or click on the map to update coordinates</small>
+      </div>
+      
+      <!-- Hidden fields to store coordinates -->
+      <input type="hidden" id="latitude" name="lat" value="{{ spot_config.lat }}" required>
+      <input type="hidden" id="longitude" name="lon" value="{{ spot_config.lon }}" required>
+      
+      <div style="margin-top: 2rem;">
+        <button type="submit" class="btn btn--primary">Save Changes</button>
+        <a href="/config" class="btn btn--secondary">Cancel</a>
+      </div>
+    </form>
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.min.js"></script>
+  <script>
+    // Global variables
+    let map;
+    let marker;
+    const originalSpotName = '{{ spot_name }}';
+    const originalLat = {{ spot_config.lat }};
+    const originalLon = {{ spot_config.lon }};
+    
+    // Initialize map with search functionality
+    function initMap() {
+      map = L.map('map').setView([originalLat, originalLon], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+      
+      // Add initial marker
+      marker = L.marker([originalLat, originalLon]).addTo(map);
+      
+      // Add search control
+      const geocoder = L.Control.Geocoder.nominatim({
+        geocodingQueryParams: {
+          countrycodes: 'de',
+          'accept-language': 'en'
+        }
+      });
+      
+      L.Control.geocoder({
+        geocoder: geocoder,
+        defaultMarkGeocode: false,
+        placeholder: 'Search for a location...',
+        errorMessage: 'No location found'
+      })
+      .on('markgeocode', function(e) {
+        const latlng = e.geocode.center;
+        setLocation(latlng.lat, latlng.lng, e.geocode.name);
+      })
+      .addTo(map);
+      
+      // Add click handler
+      map.on('click', function(e) {
+        setLocation(e.latlng.lat, e.latlng.lng);
+      });
+    }
+    
+    // Set location on map and update form
+    function setLocation(lat, lng, locationName = null) {
+      // Update hidden form fields
+      document.getElementById('latitude').value = lat.toFixed(6);
+      document.getElementById('longitude').value = lng.toFixed(6);
+      
+      // Update marker
+      marker.setLatLng([lat, lng]);
+      
+      // Center map on location
+      map.setView([lat, lng], Math.max(map.getZoom(), 12));
+    }
+    
+    // Show notification
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => notification.classList.add('show'), 100);
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => document.body.removeChild(notification), 300);
+      }, 3000);
+    }
+    
+    // Handle form submission
+    document.getElementById('edit-spot-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const newSpotName = formData.get('name');
+      const lat = parseFloat(formData.get('lat'));
+      const lon = parseFloat(formData.get('lon'));
+      
+      // Validate that coordinates are selected
+      if (!lat || !lon) {
+        showNotification('Please select a location on the map', 'error');
+        return;
+      }
+      
+      // Create update request
+      const updateData = {};
+      
+      // Check if name changed
+      if (newSpotName !== originalSpotName) {
+        updateData.name = newSpotName;
+      }
+      
+      // Check if coordinates changed
+      if (Math.abs(lat - originalLat) > 0.000001 || Math.abs(lon - originalLon) > 0.000001) {
+        updateData.config = {
+          provider: 'windy',
+          lat: lat,
+          lon: lon,
+          windy: {
+            zoom: 10,
+            overlay: 'wind',
+            units_wind: 'kt',
+            marker: true,
+            detail: true
+          }
+        };
+      }
+      
+      // If nothing changed, just go back
+      if (Object.keys(updateData).length === 0) {
+        window.location.href = '/config';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/config/spots/${encodeURIComponent(originalSpotName)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        });
+        
+        if (response.ok) {
+          showNotification('Spot updated successfully');
+          setTimeout(() => {
+            window.location.href = '/config';
+          }, 1500);
+        } else {
+          const error = await response.json();
+          showNotification(error.detail || 'Failed to update spot', 'error');
+        }
+      } catch (err) {
+        showNotification('Network error: ' + err.message, 'error');
+      }
+    });
+    
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initMap();
+    });
+  </script>
+</body>
+</html>
