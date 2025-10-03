@@ -11,121 +11,246 @@ rotation:
 spots:
   Epplesee:
     provider: windy
-    lat: 49.087
-    lon: 8.373
-    windy:
-      zoom: 11
-      overlay: wind  # wind, windGust, waves, rain, clouds, temperature, etc.
-      units_wind: kmh  # kmh, m/s, kt, mph, bft
-      marker: true
-      detail: true      # include spot forecast card
-  Bodensee-FN:
-    provider: windy
-    lat: 47.651
-    lon: 9.480
+    lat: 48.964707
+    lon: 8.323865
+    wind_directions: S,SW,W,NW
+    description: "Der Epplesee ist ein immer noch aktiv genutzter Baggersee, der mit
+      Hilfe eines Schwimmbaggers ausgebeutet wird. Aus diesem Grund sind immer wieder
+      wechselnd Stahlseile über den See gespannt, über deren Position Ihr Euch unbedingt
+      erkundigen solltet, bevor Ihr aufs Wasser geht.\n\nDer See ist mittlerweile
+      auch schon als Naherholungsgebiet konzipiert, was Ihr nicht zuletzt an den zahlreichen
+      Parkplätzen erkennt, auf denen allerdings Übernachtungsverbot herrscht, welches
+      auch scharf kontrolliert wird ! In den Sommermonaten wird auch eine Parkgebühr
+      von 4,- Euro erhoben.\n\nAm Einstieg gibt es sowohl Rasenfläche zum Aufriggen,
+      als auch einen Kieselstrand, der so seicht abfällt, dass Ihr in Ufernähe noch
+      bequem stehen könnt. Der südliche Bereich des Sees ist Naturschutzgebiet und
+      darf nicht betreten werden.\n\nAm besten funktioniert der Spot bei Südwest,
+      weil dann der Wind frei über den See einfallen kann und nicht durch den Ort
+      oder Waldflächen gebremst und unangenehm verwirbelt wird. Auch Südwind funktioniert
+      noch sehr gut, während West und Nordwest doch recht böig wehen. Bei stabiler
+      Ostwindlage oder auch starkem Westwind lohnt vielleicht auch ein Weg zum Schluchsee.\n\
+      \nAlternativ findet Ihr nördlich von Karlsruhe den Erlichsee, oder Ihr geht
+      auf dem Altrhein bei Otterstadt surfen."
     windy:
       zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
+    windfinder:
   Badsee:
     provider: windy
-    lat: 49.019
-    lon: 8.404
-    windy:
-      zoom: 11
-      overlay: wind
-      units_wind: kmh
-      marker: true
-      detail: true
-  Bodensee:
-    provider: windy
-    lat: 47.663
-    lon: 9.175
+    lat: 47.749856
+    lon: 10.002002
+    wind_directions: NE,E,SW,S
+    description: "Der Surfspot ist ein Naturmoorsee zum Windsurfen. Er ist 1,3 km
+      lang und ca. 400 m breit. Am See ist genügend Platz zum Aufbauen und der Einstieg
+      ist flach und sandig. Es gibt zahlreiche Parkplätze und sanitäre Anlagen und
+      der Eintritt ist gebührenpflichtig.\n\nDer Badsee in Baden-Württemberg liegt
+      bei Beuren, zwischen Wangen, Leutkirch und Isny im Allgäu. Der Zugang zum See
+      befindet sich an der Nordwestseite des Sees. Der Surfspot ist aufgrund des gut
+      zugänglichen Ufers ein beliebtes Freizeitziel. Neben dem Surfspot gibt es noch
+      einen Campingplatz, Restaurant und Freibad."
     windy:
       zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
-  Erlichsee:
+    windfinder:
+  Bodensee:
     provider: windy
-    lat: 49.003
-    lon: 8.347
+    lat: 47.641131
+    lon: 9.31932
+    wind_directions: N,NE,E,SE,S,SW,W,NW
+    description: ''
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
+    windfinder:
   Hardtsee:
     provider: windy
-    lat: 49.063
-    lon: 8.357
+    lat: 49.166717
+    lon: 8.612295
+    wind_directions: W,NW
+    description: "Der Spot am Hardtsee liegt in der nordwestlichen Ecke des Sees und
+      ist damit besonders für südliche bis östliche Winde geeignet, die sich frei
+      über dem See entfalten können. Bei nördlichen oder westlichen Winden müsst Ihr
+      am Einstieg und in Ufernähe mit Windabdeckung und entsprechend böigem Wind rechnen.\n\
+      \nDennoch bietet der Baggersee genug Platz, um auch bei einem Sturmtief mit
+      Wind aus Nordwest oder West auf die Kosten zu kommen, Ihr müsst die Windabdeckung
+      nur bei der Wahl der Segelgröße bedenken.\n\nAm Einstieg im Freizeitbad gibt
+      es schöne Rasenflächen zum Auf- und Abriggen und einen Sand-/Kies-Einstieg,
+      der vergleichsweise sanft abfällt und Euch so ausreichend Stehbereich zum Starten
+      und Anlanden bietet. Am gegenüberliegenden Ufer gibt es dagegen noch die für
+      Baggerseen typischen Steilufer. Auch der Bagger schwimmt nach wie vor im See
+      und auch die Anleger am See sind zwar zu beachten, stellen allerdings keine
+      große Gefahr für die Surfer dar.\n\nIm Freizeitzentrum Hardtsee findet Ihr eine
+      in jede Richtung erschlossene Infrastruktur mit einem Campingplatz, Gastronomie
+      und natürlich zahlreichen Freizeitmöglichkeiten. Parkplätze stehen ebenfalls
+      am Campingplatz zur Verfügung."
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
+    windfinder:
   Iffezheim:
     provider: windy
-    lat: 48.829
-    lon: 8.159
+    lat: 48.830352
+    lon: 8.118436
+    wind_directions: SE,S,SW,W,NW
+    description: "In Iffezheim geht ihr auf dem Kernsee direkt am Rheim zum Windsurfen
+      aufs Wasser. Hier hat der „Windsurfingclub Iffezheim“ seine Heimat. Der Kernsee
+      darf auch nur von Mitgliedern des Windsurfingclubs befahren werden – Gäste dürfen
+      nur in Begleitung eines Mitglieds und gegen eine kleine Gebühr aufs Wasser.\n\
+      \nEinstieg ist entweder direkt am Windsurfingclub oder aber je nach Windrichtung
+      auch ca. 200 m weiter südlich über einen Sandstrand. Der Kernsee ist nicht sonderlich
+      breit, so dass ihr hier am besten bei Nordwest oder Südost surft, um einigermaßen
+      lange Schläge machen zu können.\n\nBis auf etwas Windwelle ist das Wasser aber
+      bei eigentlich jeder Windrichtung flach.\n\nAlternativ geht ihr direkt auf dem
+      Rhein an der Natorampe ins Wasser. Der Spot liegt etwas südlich von der Staustufe
+      und dem Kernsee. Hier gilt es natürlich jederzeit den Schiffsverkehr im Auge
+      zu behalten, daher absolut kein Anfängerrevier."
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
+    windfinder:
   Lauterbourg:
     provider: windy
-    lat: 48.975
-    lon: 8.173
+    lat: 48.964889
+    lon: 8.168979
+    wind_directions: S,SW,W,NW
+    description: "Der Surfspot zum Windsurfen liegt am Badesee und Freizeitzentrum
+      Lauterbourg (Frankreich), an der Wassersportstation vom Club „Base de Voile
+      Lauterbourg“ am Bassin des Mouettes. Der See liegt direkt an der deutschen Grenze
+      in der Nähe von Karlsruhe. Zugang zum See bekommt Ihr an der Base de Voile.\n\
+      \nAm Spot gibt es genügend Platz zum Aufriggen auf Rasen. Am besten funktioniert
+      der Spot bei Süd, Südwest und West, weil dann der Wind frei über den See einfallen
+      kann und nicht durch den Ort oder Waldflächen gebremst und unangenehm verwirbelt
+      wird. Auch Südost funktioniert noch sehr gut, während Nord und Nordost doch
+      recht böig wehen.\n\nBei Nord geht in Lauterbourg nix, dann könnt Ihr z.B. auf
+      dem Rhein surfen. Ca. 30 km südlich von Karlsruhe liegt die Staustufe Iffezheim,
+      beste Windrichtung dort ist NO, alle anderen Windrichtungen sind schlechter.
+      N geht noch!!!"
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
+    windfinder:
   Otterstadt:
     provider: windy
-    lat: 49.361
-    lon: 8.456
+    lat: 49.37941
+    lon: 8.469815
+    wind_directions: NE,S,SW
+    description: "In Otterstadt hat sich auf dem Altrhein ein schönes Wassersportrevier
+      zum Windsurfen und Kitesurfen gebildet, das aufgrund der geschützten Lage kaum
+      Welle bietet, aber bis auf östliche Winde eigentlich immer recht konstante und
+      frei einfallende Winde.\n\nDer vom fließenden Rhein und der Schifffahrtsroute
+      abgetrennte Altrhein hat zwar noch den natürlichen Zufluss, jedoch nicht mehr
+      die rheintypische Strömung und Gefahr, so dass hier auch Otto-Normalsurfer gefahrlos
+      aufs Wasser gehen kann.\n\nBesonders bei Süd-Südwest kommt der Wind frei über
+      den Rhein und weht am Spot auflandig, so dass Ihr die gesamte Breite des Beckens
+      (etwa 1.000 m) ausfahren könnt. Aber auch Nordost kommt frei über den Damm und
+      ist ebenfalls gut surfbar. West und Nordwest wiederum wird durch die Bäume etwas
+      gebremst, und Ihr müsst mit deutlich kürzeren Schlägen leben (in etwa 500 m).\n\
+      \nSehr angenehm ist der Platz am Spot und auch auf dem Wasser – Ihr parkt kostenlos
+      direkt am Wasser und habt reichlich Wiese zum Aufriggen. Der Einstieg ist angenehm
+      abfallend und meist sandig, so dass Ihr nicht über eine Abruchkante steigen
+      müsst. Der Wasserstand im Altrhein ist durch den Zufluss allerdings abhängig
+      vom Pegel im Rhein.\n\nAlternativ könnt Ihr auch gut auf dem Silbersee und dem
+      Erlichsee surfen."
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
+    windfinder:
   Plobsheim:
     provider: windy
-    lat: 48.471
-    lon: 7.729
+    lat: 48.462646
+    lon: 7.756222
+    wind_directions: N,NE,S,SW
+    description: "Windsurfen in Plobsheim könnt ihr im Plobsheimer Becken (Plan d’Eau
+      de Plobsheim), einem vom Rhein durch eine Landzunge abgetrennten großen Wasserbecken.
+      Der See ist mit etwa 2 km Breite und 10 km Länge wohl das größte Surfrevier
+      in der weiteren Umgebung. Und diese große Wasserfläche lässt auch zu, dass sich
+      der Wind recht frei entwickeln kann.\n\nDie südliche Zone ist Naturschutzgebiet
+      und hier ist Windsurfen wie auch Kitesurfen streng verboten!\n\nPlobsheim Grillplatz:\n\
+      In der mittleren Zone im Plobsheimer Becken war Surfen in der Zeit von Mitte
+      März bis Mitte November erlaubt – mittlerweile ist der Spot ganzjährig für Surfer
+      gesperrt!\n\nPlobsheim Nord:\nIn der nördlichen Zone ist Surfen ganzjährig erlaubt.\n\
+      \nBeste Windrichtungen sind Süd bis Südwest und Nord bis Nordost. Der Einstieg
+      befindet sich am Westufer vom Plobsheimer Becken am Grillplatz, dem „La Buvette
+      aux Sept Ecluses“. Dort gibt es auch ausreichend Parkplätze und Platz zum Aufriggen.\n\
+      \nWestwind funktioniert am Plobsheimer Becken nicht, da ihr Wald im Rücken habt,
+      sowie die Vogesen, so dass der Wind nicht aufs Wasser durchkommt.\n\nDen Einstieg
+      von dem Damm bieten eingelassene Treppen, die in regelmäßigen Abständen zu finden
+      sind.\n\nDer See ist mit 1-3 m Wassertiefe recht flach, so dass sich zum einen
+      kaum Welle ausbilden kann, zum anderen das Wasser schnell warm wird. Das hat
+      zur Folge, dass sich auch das Seegras im Plobsheimer Becken ausgesprochen wohl
+      fühlt. Eine Seegrasfinne hilft in den Sommermonaten.\n\nParkplätze sind leider
+      nur begrenzt verfügbar, und das Parken an der Straße wird an vollen Tagen von
+      den Ordnungshütern geahndet. Es lohnt also das frühe Aufstehen an den wenigen
+      guten Nordwindtagen."
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
-  Schluchsee-Aha:
+    windfinder:
+  'Schluchsee – Aha ':
     provider: windy
-    lat: 47.820
-    lon: 8.185
+    lat: 47.818879
+    lon: 8.151385
+    wind_directions: SE,NW
+    description: "Der Surfspot in Aha ist eine der wenigen Möglichkeiten, mit dem
+      Auto relativ nahe an das Wasser zu kommen. Hier gibt es einen kleinen Strand
+      vor dem Hotel Auerhahn mit einer schönen großen Liegewiese. Der Kiesstrand ist
+      durchsetzt mit Geröll und Rasen und fällt relativ schnell ab, so dass Ihr nur
+      in Ufernähe stehen könnt. Kleine Bootsanleger begrenzen den Bereich nach links
+      und rechts.\n\nDurch das bergige Umland und die längliche Form des Sees ist
+      eigentlich nur West- oder Ostwind surfbar. Wind aus West-Nordwest presst sich
+      zwischen den Hügeln durch bis auf den Schluchsee und kann auch im Westteil des
+      Sees schon früh frei einfallen und über dem restlichen See auswehen, da hier
+      das Hinterland über dem Zufluss etwas flacher verläuft. Aber auch Wind aus Südost
+      hat 7 km Platz, um sich frei zu entfalten und in Aha entsprechend konstant anzukommen."
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
-  St-Leoner-See:
+    windfinder:
+  St. Leoner See:
     provider: windy
-    lat: 49.346
-    lon: 8.745
+    lat: 49.280205
+    lon: 8.597284
+    wind_directions: N,NE,E,SE,S,SW,W,NW
+    description: "In St. Leon Rot in der Nähe von Karlsruhe findet ihr den St. Leoner
+      See – oder besser die beiden St. Leoner Seen, die zu einer Erholungsanlage zusammengefasst
+      sind. Denn hier herrscht klare Teilung. Der westliche See ist den Badegästen
+      und der Wakeboardanlage vorbehalten, während auf dem östlichen See gesurft und
+      gesegelt wird.\n\nAufgeriggt wird auf großzügigen Rasenflächen, den Einstieg
+      bilden dann schmale und schnell abfallende Kiesstrände. Gut funktioniert am
+      St. Leoner See Wind aus West bis Nordwest und aus Ost bis Südost. Welle kann
+      sich nicht wirklich ausbilden, so dass ihr hier ein schönes Anfängerrevier mit
+      toller Infrastruktur findet."
     windy:
-      zoom: 11
+      zoom: 10
       overlay: wind
-      units_wind: kmh
+      units_wind: kt
       marker: true
       detail: true
+    windfinder:
