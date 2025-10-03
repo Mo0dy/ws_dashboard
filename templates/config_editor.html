@@ -235,82 +235,40 @@
       position: relative;
       width: 120px;
       height: 120px;
-      border-radius: 50%;
-      border: 2px solid #20262c;
-      background: var(--card);
       margin: 40px auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: 50%;
     }
-    
+
+    .wind-compass svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
     .wind-sector {
-      position: absolute;
-      width: 32px;
-      height: 20px;
+      fill: var(--card);
+      stroke: #20262c;
+      stroke-width: 1;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
-      user-select: none;
-      background: var(--card);
-      border: 1px solid #20262c;
-      border-radius: 4px;
+      transition: fill 0.15s ease, stroke 0.15s ease;
     }
-    
+
     .wind-sector:hover {
-      background: rgba(70, 160, 255, 0.2);
-      border-color: var(--accent);
+      fill: rgba(70,160,255,0.2);
+      stroke: var(--accent);
     }
-    
+
     .wind-sector.selected {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
+      fill: var(--accent);
+      stroke: var(--accent);
     }
-    
-    /* Position sectors around the circle */
-    .wind-sector.n {
-      top: 5px;
-      left: 44px;
-    }
-    
-    .wind-sector.ne {
-      top: 15px;
-      right: 15px;
-    }
-    
-    .wind-sector.e {
-      top: 50px;
-      right: 5px;
-    }
-    
-    .wind-sector.se {
-      bottom: 15px;
-      right: 15px;
-    }
-    
-    .wind-sector.s {
-      bottom: 5px;
-      left: 44px;
-    }
-    
-    .wind-sector.sw {
-      bottom: 15px;
-      left: 15px;
-    }
-    
-    .wind-sector.w {
-      top: 50px;
-      left: 5px;
-    }
-    
-    .wind-sector.nw {
-      top: 15px;
-      left: 15px;
+
+    .wind-label {
+      font: 600 9px/1 system-ui, sans-serif;
+      fill: var(--fg);
+      pointer-events: none; /* let clicks go to the wedge */
+      text-anchor: middle;
+      dominant-baseline: middle;
     }
     
     .wind-directions-display {
@@ -387,16 +345,7 @@
         <div class="form-group">
           <label>Best Wind Directions</label>
           <div class="wind-direction-selector">
-            <div class="wind-compass" id="wind-compass-new">
-              <div class="wind-sector n" data-direction="N">N</div>
-              <div class="wind-sector ne" data-direction="NE">NE</div>
-              <div class="wind-sector e" data-direction="E">E</div>
-              <div class="wind-sector se" data-direction="SE">SE</div>
-              <div class="wind-sector s" data-direction="S">S</div>
-              <div class="wind-sector sw" data-direction="SW">SW</div>
-              <div class="wind-sector w" data-direction="W">W</div>
-              <div class="wind-sector nw" data-direction="NW">NW</div>
-            </div>
+            <div class="wind-compass" id="wind-compass-new"></div>
             <div class="wind-directions-display" id="wind-display-new">All directions selected</div>
           </div>
         </div>
@@ -530,6 +479,73 @@
       updateDisplay();
     }
     
+    // Build an 8-sector clickable SVG compass inside the container.
+    function buildWindCompass(containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 120 120");
+
+      const cx = 60, cy = 60, r = 58;
+      const halfSpan = 22.5 * Math.PI / 180; // half of 45°
+      const dirs = [
+        ["N", -90], ["NE", -45], ["E", 0], ["SE", 45],
+        ["S", 90], ["SW", 135], ["W", 180], ["NW", -135],
+      ];
+
+      function polarXY(radius, angleRad) {
+        // SVG y axis is downwards
+        return [cx + radius * Math.cos(angleRad), cy + radius * Math.sin(angleRad)];
+      }
+
+      function wedgePath(centerDeg) {
+        const c = centerDeg * Math.PI / 180;
+        const start = c - halfSpan;
+        const end   = c + halfSpan;
+
+        const [x1, y1] = polarXY(r, start);
+        const [x2, y2] = polarXY(r, end);
+
+        // Large-arc-flag = 0 (45°), sweep = 1 (clockwise)
+        return `M ${cx} ${cy} L ${x1.toFixed(3)} ${y1.toFixed(3)} A ${r} ${r} 0 0 1 ${x2.toFixed(3)} ${y2.toFixed(3)} Z`;
+      }
+
+      // Background circle (optional subtle ring)
+      const ring = document.createElementNS(NS, "circle");
+      ring.setAttribute("cx", cx);
+      ring.setAttribute("cy", cy);
+      ring.setAttribute("r", r);
+      ring.setAttribute("fill", "var(--card)");
+      ring.setAttribute("stroke", "#20262c");
+      ring.setAttribute("stroke-width", "2");
+      svg.appendChild(ring);
+
+      // Sectors + labels
+      dirs.forEach(([label, deg]) => {
+        // Sector
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("class", "wind-sector");
+        path.setAttribute("d", wedgePath(deg));
+        path.dataset.direction = label;
+        svg.appendChild(path);
+
+        // Label (at 70% radius along the center angle)
+        const rad = deg * Math.PI / 180;
+        const [tx, ty] = polarXY(r * 0.65, rad);
+        const text = document.createElementNS(NS, "text");
+        text.setAttribute("class", "wind-label");
+        text.setAttribute("x", tx.toFixed(2));
+        text.setAttribute("y", ty.toFixed(2));
+        text.textContent = label;
+        svg.appendChild(text);
+      });
+
+      el.innerHTML = "";
+      el.appendChild(svg);
+    }
+
     // Initialize drag and drop for reordering
     function initSortable() {
       const spotsList = document.getElementById('spots-list');
@@ -689,7 +705,11 @@
     document.addEventListener('DOMContentLoaded', function() {
       initMap();
       initSortable();
+
+      // Build SVG wedges, then hook up your existing selector logic
+      buildWindCompass('wind-compass-new');
       initWindDirectionSelector('wind-compass-new', 'wind-display-new', 'wind-directions');
+
       // Small delay to ensure DOM is fully rendered
       setTimeout(initThumbnailMaps, 100);
     });
