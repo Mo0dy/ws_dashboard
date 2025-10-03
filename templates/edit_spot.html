@@ -24,7 +24,7 @@
       font-weight: 600;
     }
     
-    .form-group input {
+    .form-group input, .form-group textarea {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #20262c;
@@ -32,9 +32,15 @@
       color: var(--fg);
       border-radius: 0.4rem;
       font-size: 1rem;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
     }
     
-    .form-group input:focus {
+    .form-group textarea {
+      resize: vertical;
+      min-height: 2.5rem;
+    }
+    
+    .form-group input:focus, .form-group textarea:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(70, 160, 255, 0.2);
@@ -231,6 +237,11 @@
       </div>
       
       <div class="form-group">
+        <label for="spot-description">Description (optional)</label>
+        <textarea id="spot-description" name="description" placeholder="e.g., Good for beginners, shallow water, parking available" rows="2">{{ spot_config.get('description', '') }}</textarea>
+      </div>
+      
+      <div class="form-group">
         <label for="map">Update Location</label>
         <div id="map"></div>
         <small class="muted">Search for a location or click on the map to update coordinates</small>
@@ -267,6 +278,7 @@
     const originalLat = {{ spot_config.lat }};
     const originalLon = {{ spot_config.lon }};
     const originalWindDirections = '{{ spot_config.wind_directions | default("N,NE,E,SE,S,SW,W,NW") }}';
+    const originalDescription = '{{ spot_config.description | default("") }}';
     
     // Initialize map with search functionality
     function initMap() {
@@ -512,6 +524,7 @@
       
       const formData = new FormData(this);
       const newSpotName = formData.get('name');
+      const description = formData.get('description') || '';
       const lat = parseFloat(formData.get('lat'));
       const lon = parseFloat(formData.get('lon'));
       
@@ -529,17 +542,24 @@
         updateData.name = newSpotName;
       }
       
-      // Check if coordinates or wind directions changed
+      // Check if description changed
+      if (description !== originalDescription) {
+        updateData.description = description;
+      }
+      
+      // Check if coordinates, wind directions, or description changed
       const windDirections = formData.get('wind_directions') || 'N,NE,E,SE,S,SW,W,NW';
       const coordsChanged = Math.abs(lat - originalLat) > 0.000001 || Math.abs(lon - originalLon) > 0.000001;
       const windDirectionsChanged = windDirections !== originalWindDirections;
+      const descriptionChanged = description !== originalDescription;
       
-      if (coordsChanged || windDirectionsChanged) {
+      if (coordsChanged || windDirectionsChanged || descriptionChanged) {
         updateData.config = {
           provider: 'windy',
           lat: lat,
           lon: lon,
           wind_directions: windDirections,
+          description: description,
           windy: {
             zoom: 10,
             overlay: 'wind',

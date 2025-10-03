@@ -59,11 +59,17 @@ class SpotConfig(BaseModel):
     lat: float
     lon: float
     wind_directions: str = "N,NE,E,SE,S,SW,W,NW"  # Default to all directions
+    description: str = ""  # Optional description
     windy: WindyConfig = WindyConfig()
     windfinder: WindfinderConfig = None
+    
+    class Config:
+        # Ensure all fields are included in dict() output, even if they have default values
+        use_enum_values = True
 
 class SpotUpdate(BaseModel):
     name: str = None  # For renaming
+    description: str = None  # For updating description only
     config: SpotConfig = None
 
 class SpotReorderRequest(BaseModel):
@@ -230,7 +236,7 @@ async def add_spot(spot_name: str, spot_config: SpotConfig):
         if spot_name in cfg["spots"]:
             raise HTTPException(status_code=400, detail="Spot already exists")
         
-        cfg["spots"][spot_name] = spot_config.dict()
+        cfg["spots"][spot_name] = spot_config.dict(exclude_unset=False)
         save_config(cfg)
         return JSONResponse({"message": f"Spot '{spot_name}' added successfully"})
     except HTTPException:
@@ -246,6 +252,8 @@ async def update_spot(spot_name: str, update: SpotUpdate):
         if spot_name not in cfg["spots"]:
             raise HTTPException(status_code=404, detail="Spot not found")
         
+
+        
         # Handle renaming
         if update.name and update.name != spot_name:
             if update.name in cfg["spots"]:
@@ -254,9 +262,14 @@ async def update_spot(spot_name: str, update: SpotUpdate):
             cfg["spots"][update.name] = cfg["spots"].pop(spot_name)
             spot_name = update.name
         
+        # Update description only (without full config update)
+        if update.description is not None and not update.config:
+            cfg["spots"][spot_name]["description"] = update.description
+        
         # Update configuration
         if update.config:
-            cfg["spots"][spot_name] = update.config.dict()
+            config_dict = update.config.dict(exclude_unset=False)
+            cfg["spots"][spot_name] = config_dict
         
         save_config(cfg)
         return JSONResponse({"message": f"Spot '{spot_name}' updated successfully"})

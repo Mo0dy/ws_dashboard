@@ -152,7 +152,7 @@
       font-weight: 600;
     }
     
-    .form-group input, .form-group select {
+    .form-group input, .form-group select, .form-group textarea {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #20262c;
@@ -160,9 +160,15 @@
       color: var(--fg);
       border-radius: 0.4rem;
       font-size: 1rem;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
     }
     
-    .form-group input:focus, .form-group select:focus {
+    .form-group textarea {
+      resize: vertical;
+      min-height: 2.5rem;
+    }
+    
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(70, 160, 255, 0.2);
@@ -354,6 +360,11 @@
         <div class="form-group">
           <label for="spot-name">Spot Name</label>
           <input type="text" id="spot-name" name="name" placeholder="e.g., Bodensee-Konstanz" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="spot-description">Description (optional)</label>
+          <textarea id="spot-description" name="description" placeholder="e.g., Good for beginners, shallow water, parking available" rows="2"></textarea>
         </div>
         
         <div class="form-group">
@@ -700,6 +711,7 @@
       
       const formData = new FormData(this);
       const spotName = formData.get('name');
+      const description = formData.get('description') || '';
       const lat = parseFloat(formData.get('lat'));
       const lon = parseFloat(formData.get('lon'));
       
@@ -716,6 +728,7 @@
         lat: lat,
         lon: lon,
         wind_directions: windDirections,
+        description: description,
         windy: {
           zoom: 10,
           overlay: 'wind',
