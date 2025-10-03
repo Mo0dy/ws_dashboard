@@ -121,9 +121,9 @@
           <div class="card__title">
             {% if s.view_link %}
               <a href="{{ s.view_link }}" style="color: inherit; text-decoration: none;" 
-                 {% if s.description %}title="{{ s.description }}"{% endif %}>{{ s.title }}</a>
+                 {% if s.description %}title="{{ s.description | e }}"{% endif %}>{{ s.title }}</a>
             {% else %}
-              <span {% if s.description %}title="{{ s.description }}"{% endif %}>{{ s.title }}</span>
+              <span {% if s.description %}title="{{ s.description | e }}"{% endif %}>{{ s.title }}</span>
             {% endif %}
             <span class="wind-icon-container" data-directions="{{ s.wind_directions }}"></span>
           </div>

@@ -238,7 +238,7 @@
       
       <div class="form-group">
         <label for="spot-description">Description (optional)</label>
-        <textarea id="spot-description" name="description" placeholder="e.g., Good for beginners, shallow water, parking available" rows="2">{{ spot_config.get('description', '') }}</textarea>
+        <textarea id="spot-description" name="description" placeholder="e.g., Good for beginners, shallow water, parking available" rows="2">{{ spot_config.get('description', '') | e }}</textarea>
       </div>
       
       <div class="form-group">
@@ -274,11 +274,11 @@
     // Global variables
     let map;
     let marker;
-    const originalSpotName = '{{ spot_name }}';
+    const originalSpotName = {{ spot_name | tojson }};
     const originalLat = {{ spot_config.lat }};
     const originalLon = {{ spot_config.lon }};
-    const originalWindDirections = '{{ spot_config.wind_directions | default("N,NE,E,SE,S,SW,W,NW") }}';
-    const originalDescription = '{{ spot_config.description | default("") }}';
+    const originalWindDirections = {{ (spot_config.wind_directions | default("N,NE,E,SE,S,SW,W,NW")) | tojson }};
+    const originalDescription = {{ (spot_config.description | default("")) | tojson }};
     
     // Initialize map with search functionality
     function initMap() {
