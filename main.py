@@ -65,6 +65,9 @@ class SpotUpdate(BaseModel):
     name: str = None  # For renaming
     config: SpotConfig = None
 
+class SpotReorderRequest(BaseModel):
+    spot_order: List[str]
+
 # Initialize YAML handler for preserving order and comments
 yaml_handler = YAML()
 yaml_handler.preserve_quotes = True
@@ -193,6 +196,31 @@ async def get_spots():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to load spots: {str(e)}")
 
+@app.put("/api/config/spots/reorder")
+async def reorder_spots(request: SpotReorderRequest):
+    """Reorder spots according to the provided list."""
+    try:
+        cfg = load_config()
+        current_spots = cfg["spots"]
+        spot_order = request.spot_order
+        
+        # Validate that all spots in the order exist
+        if set(spot_order) != set(current_spots.keys()):
+            raise HTTPException(status_code=400, detail="Spot order doesn't match existing spots")
+        
+        # Create new ordered dict
+        new_spots = {}
+        for spot_name in spot_order:
+            new_spots[spot_name] = current_spots[spot_name]
+        
+        cfg["spots"] = new_spots
+        save_config(cfg)
+        return JSONResponse({"message": "Spots reordered successfully"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reorder spots: {str(e)}")
+
 @app.post("/api/config/spots/{spot_name}")
 async def add_spot(spot_name: str, spot_config: SpotConfig):
     """Add a new spot."""
@@ -251,30 +279,6 @@ async def delete_spot(spot_name: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete spot: {str(e)}")
-
-@app.put("/api/config/spots/reorder")
-async def reorder_spots(spot_order: List[str]):
-    """Reorder spots according to the provided list."""
-    try:
-        cfg = load_config()
-        current_spots = cfg["spots"]
-        
-        # Validate that all spots in the order exist
-        if set(spot_order) != set(current_spots.keys()):
-            raise HTTPException(status_code=400, detail="Spot order doesn't match existing spots")
-        
-        # Create new ordered dict
-        new_spots = {}
-        for spot_name in spot_order:
-            new_spots[spot_name] = current_spots[spot_name]
-        
-        cfg["spots"] = new_spots
-        save_config(cfg)
-        return JSONResponse({"message": "Spots reordered successfully"})
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to reorder spots: {str(e)}")
 
 # --- DWD endpoints ---
 @app.get("/dwd/{name}.png")

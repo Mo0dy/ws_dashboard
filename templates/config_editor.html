@@ -460,7 +460,7 @@
         const response = await fetch('/api/config/spots/reorder', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(spotOrder)
+          body: JSON.stringify({ spot_order: spotOrder })
         });
         
         if (response.ok) {
