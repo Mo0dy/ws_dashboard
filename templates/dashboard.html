@@ -124,8 +124,12 @@
             {% else %}
               {{ s.title }}
             {% endif %}
+            <span class="wind-icon-container" data-directions="{{ s.wind_directions }}"></span>
           </div>
-          <div class="card__content">
+          <div class="card__content" style="position: relative;">
+            {% if not compact %}
+              <div class="spot-overlay wind-overlay-view" data-directions="{{ s.wind_directions }}"></div>
+            {% endif %}
             {% if s.iframe_src %}
               <iframe
                 class="frame {% if compact %}spot-frame{% else %}map-embed{% endif %}"
@@ -162,6 +166,89 @@
       setVhUnit();
       applyFit();
     })();
+  </script>
+
+  <!-- Wind direction icons -->
+  <style>
+    .wind-icon {
+      display: inline-block;
+      vertical-align: middle;
+      color: var(--muted);
+      margin-left: 0.5rem;
+    }
+    
+    .spot-overlay {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 50%;
+      padding: 0.5rem;
+      color: white;
+    }
+  </style>
+  
+  <script>
+    // Generate a small wind direction icon SVG
+    function createWindIcon(directions, size = 24) {
+      const dirList = directions.split(',').map(d => d.trim()).filter(Boolean);
+      if (dirList.length === 0) return '';
+      
+      const NS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("width", size);
+      svg.setAttribute("height", size);
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("class", "wind-icon");
+      
+      const cx = 12, cy = 12, r = 10;
+      const dirMap = {
+        'N': -90, 'NE': -45, 'E': 0, 'SE': 45,
+        'S': 90, 'SW': 135, 'W': 180, 'NW': -135
+      };
+      
+      // Background circle
+      const circle = document.createElementNS(NS, "circle");
+      circle.setAttribute("cx", cx);
+      circle.setAttribute("cy", cy);
+      circle.setAttribute("r", r);
+      circle.setAttribute("fill", "none");
+      circle.setAttribute("stroke", "currentColor");
+      circle.setAttribute("stroke-width", "1");
+      circle.setAttribute("opacity", "0.3");
+      svg.appendChild(circle);
+      
+      // Draw filled sectors for selected directions
+      dirList.forEach(dir => {
+        if (dirMap[dir] !== undefined) {
+          // Check if we're in compact mode (overview) vs single spot view
+          const isOverview = document.querySelector('.twocol') !== null;
+          const angleOffset = isOverview ? 180 : 0; // Add 180° for overview only
+          const angle = (dirMap[dir] + angleOffset) * Math.PI / 180;
+          const sectorAngle = 45 * Math.PI / 180; // 45 degree sectors
+          const startAngle = angle - sectorAngle / 2;
+          const endAngle = angle + sectorAngle / 2;
+          
+          // Create sector path
+          const x1 = cx + r * Math.cos(startAngle);
+          const y1 = cy + r * Math.sin(startAngle);
+          const x2 = cx + r * Math.cos(endAngle);
+          const y2 = cy + r * Math.sin(endAngle);
+          
+          const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`;
+          
+          const sector = document.createElementNS(NS, "path");
+          sector.setAttribute("d", pathData);
+          sector.setAttribute("fill", "currentColor");
+          sector.setAttribute("opacity", "0.6");
+          sector.setAttribute("stroke", "currentColor");
+          sector.setAttribute("stroke-width", "1");
+          svg.appendChild(sector);
+        }
+      });
+      
+      return svg.outerHTML;
+    }
   </script>
 
   <!-- Auto-scroll functionality for forecast widgets -->
@@ -237,6 +324,27 @@
     })();
   </script>
   {% endif %}
+
+  <script>
+    // Initialize wind direction icons
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize icons in card titles
+      document.querySelectorAll('.wind-icon-container').forEach(container => {
+        const directions = container.dataset.directions;
+        if (directions && directions !== 'N,NE,E,SE,S,SW,W,NW') {
+          container.innerHTML = createWindIcon(directions, 18);
+        }
+      });
+      
+      // Initialize overlay icons for individual spot views
+      document.querySelectorAll('.wind-overlay-view').forEach(overlay => {
+        const directions = overlay.dataset.directions;
+        if (directions && directions !== 'N,NE,E,SE,S,SW,W,NW') {
+          overlay.innerHTML = createWindIcon(directions, 32);
+        }
+      });
+    });
+  </script>
 
   <footer class="footer">
     <div>

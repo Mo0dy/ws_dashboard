@@ -331,7 +331,8 @@ def view_page(request: Request, view_name: str):
                 "title": f"{spot_name} (missing in config)", 
                 "iframe_src": None, 
                 "detail_link": None,
-                "view_link": None
+                "view_link": None,
+                "wind_directions": "N,NE,E,SE,S,SW,W,NW"
             })
             continue
 
@@ -377,7 +378,8 @@ def view_page(request: Request, view_name: str):
                 "title": f"{title} (unknown provider: {provider})", 
                 "iframe_src": None, 
                 "detail_link": None,
-                "view_link": None
+                "view_link": None,
+                "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW")
             })
 
         if iframe_src:
@@ -385,7 +387,8 @@ def view_page(request: Request, view_name: str):
                 "title": title, 
                 "iframe_src": iframe_src, 
                 "detail_link": detail_link,
-                "view_link": view_link
+                "view_link": view_link,
+                "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW")
             })
 
     rotation = cfg.get("rotation", {})
@@ -433,7 +436,8 @@ def spot_detail(request: Request, spot_name: str):
             "title": title, 
             "iframe_src": iframe_src, 
             "detail_link": None,
-            "view_link": None
+            "view_link": None,
+            "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW")
         })
 
     # You can choose to keep DWD on the left on detail pages; set to False if not desired.
