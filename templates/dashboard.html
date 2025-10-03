@@ -17,6 +17,9 @@
           <a class="view" href="/view/{{ v }}">{{ v }}</a>
         {% endif %}
       {% endfor %}
+      {% if views %}
+        <a class="view" href="/config" style="margin-left: auto;">⚙️ Config</a>
+      {% endif %}
     </nav>
   </header>
 

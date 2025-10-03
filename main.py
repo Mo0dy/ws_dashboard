@@ -2,12 +2,16 @@
 import os
 from pathlib import Path
 from typing import Any, Dict, List
+import shutil
+from collections import OrderedDict
 
 import yaml
+from ruamel.yaml import YAML
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 from datetime import datetime, timezone, date
 import asyncio
@@ -39,6 +43,33 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 _dwd_locks = {name: asyncio.Lock() for name in DWD_IMAGES.keys()}
 
+# --- Pydantic models for API ---
+class WindyConfig(BaseModel):
+    zoom: int = 10
+    overlay: str = "wind"
+    units_wind: str = "kmh"
+    marker: bool = True
+    detail: bool = True
+
+class WindfinderConfig(BaseModel):
+    widget_src: str
+
+class SpotConfig(BaseModel):
+    provider: str = "windy"
+    lat: float
+    lon: float
+    windy: WindyConfig = WindyConfig()
+    windfinder: WindfinderConfig = None
+
+class SpotUpdate(BaseModel):
+    name: str = None  # For renaming
+    config: SpotConfig = None
+
+# Initialize YAML handler for preserving order and comments
+yaml_handler = YAML()
+yaml_handler.preserve_quotes = True
+yaml_handler.default_flow_style = False
+
 def _is_fresh(path: Path, max_age_hours: int = 2) -> bool:
     if not path.exists():
         return False
@@ -56,10 +87,20 @@ async def _fetch_and_cache(url: str, dst: Path) -> None:
 # --- config ---
 def load_config() -> Dict[str, Any]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
+        cfg = yaml_handler.load(f)
     cfg.setdefault("rotation", {"enabled": False, "interval_seconds": 30})
     cfg.setdefault("spots", {})
     return cfg
+
+def save_config(cfg: Dict[str, Any]) -> None:
+    """Save config to YAML file with backup."""
+    # Create backup
+    backup_path = CONFIG_PATH.with_suffix(".yaml.bak")
+    shutil.copy2(CONFIG_PATH, backup_path)
+    
+    # Save new config
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        yaml_handler.dump(cfg, f)
 
 def generate_views_from_spots(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Generate views automatically from spots configuration."""
@@ -132,6 +173,108 @@ def windy_forecast_iframe_src(lat: float, lon: float, opts: dict) -> str:
 
 def windfinder_iframe_src(widget_src: str) -> str:
     return widget_src
+
+# --- Config API endpoints ---
+@app.get("/api/config")
+async def get_config():
+    """Get the current configuration."""
+    try:
+        cfg = load_config()
+        return JSONResponse(cfg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load config: {str(e)}")
+
+@app.get("/api/config/spots")
+async def get_spots():
+    """Get all spots."""
+    try:
+        cfg = load_config()
+        return JSONResponse(cfg.get("spots", {}))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load spots: {str(e)}")
+
+@app.post("/api/config/spots/{spot_name}")
+async def add_spot(spot_name: str, spot_config: SpotConfig):
+    """Add a new spot."""
+    try:
+        cfg = load_config()
+        if spot_name in cfg["spots"]:
+            raise HTTPException(status_code=400, detail="Spot already exists")
+        
+        cfg["spots"][spot_name] = spot_config.dict()
+        save_config(cfg)
+        return JSONResponse({"message": f"Spot '{spot_name}' added successfully"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add spot: {str(e)}")
+
+@app.put("/api/config/spots/{spot_name}")
+async def update_spot(spot_name: str, update: SpotUpdate):
+    """Update or rename an existing spot."""
+    try:
+        cfg = load_config()
+        if spot_name not in cfg["spots"]:
+            raise HTTPException(status_code=404, detail="Spot not found")
+        
+        # Handle renaming
+        if update.name and update.name != spot_name:
+            if update.name in cfg["spots"]:
+                raise HTTPException(status_code=400, detail="New spot name already exists")
+            # Move the spot to new name
+            cfg["spots"][update.name] = cfg["spots"].pop(spot_name)
+            spot_name = update.name
+        
+        # Update configuration
+        if update.config:
+            cfg["spots"][spot_name] = update.config.dict()
+        
+        save_config(cfg)
+        return JSONResponse({"message": f"Spot '{spot_name}' updated successfully"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update spot: {str(e)}")
+
+@app.delete("/api/config/spots/{spot_name}")
+async def delete_spot(spot_name: str):
+    """Delete a spot."""
+    try:
+        cfg = load_config()
+        if spot_name not in cfg["spots"]:
+            raise HTTPException(status_code=404, detail="Spot not found")
+        
+        del cfg["spots"][spot_name]
+        save_config(cfg)
+        return JSONResponse({"message": f"Spot '{spot_name}' deleted successfully"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete spot: {str(e)}")
+
+@app.put("/api/config/spots/reorder")
+async def reorder_spots(spot_order: List[str]):
+    """Reorder spots according to the provided list."""
+    try:
+        cfg = load_config()
+        current_spots = cfg["spots"]
+        
+        # Validate that all spots in the order exist
+        if set(spot_order) != set(current_spots.keys()):
+            raise HTTPException(status_code=400, detail="Spot order doesn't match existing spots")
+        
+        # Create new ordered dict
+        new_spots = {}
+        for spot_name in spot_order:
+            new_spots[spot_name] = current_spots[spot_name]
+        
+        cfg["spots"] = new_spots
+        save_config(cfg)
+        return JSONResponse({"message": "Spots reordered successfully"})
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reorder spots: {str(e)}")
 
 # --- DWD endpoints ---
 @app.get("/dwd/{name}.png")
@@ -301,5 +444,18 @@ def spot_detail(request: Request, spot_name: str):
             "rotation_interval": 30,
             "compact": False,            # detail -> maps
             "dwd_version": date.today().strftime("%Y%m%d"),
+        },
+    )
+
+@app.get("/config", response_class=HTMLResponse)
+def config_editor(request: Request):
+    """Configuration editor page."""
+    cfg = load_config()
+    return templates.TemplateResponse(
+        "config_editor.html",
+        {
+            "request": request,
+            "config": cfg,
+            "spots": cfg.get("spots", {}),
         },
     )
