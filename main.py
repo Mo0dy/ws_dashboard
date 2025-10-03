@@ -58,6 +58,7 @@ class SpotConfig(BaseModel):
     provider: str = "windy"
     lat: float
     lon: float
+    wind_directions: str = "N,NE,E,SE,S,SW,W,NW"  # Default to all directions
     windy: WindyConfig = WindyConfig()
     windfinder: WindfinderConfig = None
 

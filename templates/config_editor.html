@@ -223,6 +223,101 @@
     .back-link:hover {
       text-decoration: underline;
     }
+    
+    .wind-direction-selector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .wind-compass {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px solid #20262c;
+      background: var(--card);
+      margin: 40px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .wind-sector {
+      position: absolute;
+      width: 32px;
+      height: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      user-select: none;
+      background: var(--card);
+      border: 1px solid #20262c;
+      border-radius: 4px;
+    }
+    
+    .wind-sector:hover {
+      background: rgba(70, 160, 255, 0.2);
+      border-color: var(--accent);
+    }
+    
+    .wind-sector.selected {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    
+    /* Position sectors around the circle */
+    .wind-sector.n {
+      top: 5px;
+      left: 44px;
+    }
+    
+    .wind-sector.ne {
+      top: 15px;
+      right: 15px;
+    }
+    
+    .wind-sector.e {
+      top: 50px;
+      right: 5px;
+    }
+    
+    .wind-sector.se {
+      bottom: 15px;
+      right: 15px;
+    }
+    
+    .wind-sector.s {
+      bottom: 5px;
+      left: 44px;
+    }
+    
+    .wind-sector.sw {
+      bottom: 15px;
+      left: 15px;
+    }
+    
+    .wind-sector.w {
+      top: 50px;
+      left: 5px;
+    }
+    
+    .wind-sector.nw {
+      top: 15px;
+      left: 15px;
+    }
+    
+    .wind-directions-display {
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -289,9 +384,27 @@
           <small class="muted">Search for a location or click on the map to select coordinates</small>
         </div>
         
-        <!-- Hidden fields to store coordinates -->
+        <div class="form-group">
+          <label>Best Wind Directions</label>
+          <div class="wind-direction-selector">
+            <div class="wind-compass" id="wind-compass-new">
+              <div class="wind-sector n" data-direction="N">N</div>
+              <div class="wind-sector ne" data-direction="NE">NE</div>
+              <div class="wind-sector e" data-direction="E">E</div>
+              <div class="wind-sector se" data-direction="SE">SE</div>
+              <div class="wind-sector s" data-direction="S">S</div>
+              <div class="wind-sector sw" data-direction="SW">SW</div>
+              <div class="wind-sector w" data-direction="W">W</div>
+              <div class="wind-sector nw" data-direction="NW">NW</div>
+            </div>
+            <div class="wind-directions-display" id="wind-display-new">All directions selected</div>
+          </div>
+        </div>
+        
+        <!-- Hidden fields to store coordinates and wind directions -->
         <input type="hidden" id="latitude" name="lat" required>
         <input type="hidden" id="longitude" name="lon" required>
+        <input type="hidden" id="wind-directions" name="wind_directions" value="N,NE,E,SE,S,SW,W,NW">
         
         <button type="submit" class="btn btn--primary">Add Spot</button>
       </form>
@@ -364,6 +477,57 @@
         const parts = locationName.split(',');
         spotNameField.value = parts[0].trim();
       }
+    }
+    
+    // Initialize wind direction selector
+    function initWindDirectionSelector(compassId, displayId, hiddenFieldId, initialDirections = 'N,NE,E,SE,S,SW,W,NW') {
+      const compass = document.getElementById(compassId);
+      const display = document.getElementById(displayId);
+      const hiddenField = document.getElementById(hiddenFieldId);
+      
+      if (!compass || !display || !hiddenField) return;
+      
+      let selectedDirections = new Set(initialDirections.split(',').filter(d => d.trim()));
+      
+      // Update display and form
+      function updateDisplay() {
+        const directionsArray = Array.from(selectedDirections);
+        hiddenField.value = directionsArray.join(',');
+        
+        if (directionsArray.length === 0) {
+          display.textContent = 'No directions selected';
+        } else if (directionsArray.length === 8) {
+          display.textContent = 'All directions selected';
+        } else {
+          display.textContent = directionsArray.join(', ');
+        }
+        
+        // Update visual state
+        compass.querySelectorAll('.wind-sector').forEach(sector => {
+          const direction = sector.dataset.direction;
+          if (selectedDirections.has(direction)) {
+            sector.classList.add('selected');
+          } else {
+            sector.classList.remove('selected');
+          }
+        });
+      }
+      
+      // Add click handlers
+      compass.querySelectorAll('.wind-sector').forEach(sector => {
+        sector.addEventListener('click', function() {
+          const direction = this.dataset.direction;
+          if (selectedDirections.has(direction)) {
+            selectedDirections.delete(direction);
+          } else {
+            selectedDirections.add(direction);
+          }
+          updateDisplay();
+        });
+      });
+      
+      // Initial update
+      updateDisplay();
     }
     
     // Initialize drag and drop for reordering
@@ -452,10 +616,12 @@
       }
       
       // Create spot config with default Windy settings
+      const windDirections = formData.get('wind_directions') || 'N,NE,E,SE,S,SW,W,NW';
       const spotConfig = {
         provider: 'windy',
         lat: lat,
         lon: lon,
+        wind_directions: windDirections,
         windy: {
           zoom: 10,
           overlay: 'wind',
@@ -523,6 +689,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       initMap();
       initSortable();
+      initWindDirectionSelector('wind-compass-new', 'wind-display-new', 'wind-directions');
       // Small delay to ensure DOM is fully rendered
       setTimeout(initThumbnailMaps, 100);
     });
