@@ -345,7 +345,8 @@ def view_page(request: Request, view_name: str):
                 "iframe_src": None, 
                 "detail_link": None,
                 "view_link": None,
-                "wind_directions": "N,NE,E,SE,S,SW,W,NW"
+                "wind_directions": "N,NE,E,SE,S,SW,W,NW",
+                "description": ""
             })
             continue
 
@@ -364,7 +365,8 @@ def view_page(request: Request, view_name: str):
                     "title": f"{title} (missing lat/lon)", 
                     "iframe_src": None, 
                     "detail_link": None,
-                    "view_link": None
+                    "view_link": None,
+                    "description": spec.get("description", "")
                 })
             else:
                 # Use map widget if DWD is not shown, forecast widget if DWD is shown
@@ -383,7 +385,8 @@ def view_page(request: Request, view_name: str):
                     "title": f"{title} (missing windfinder.widget_src)", 
                     "iframe_src": None, 
                     "detail_link": None,
-                    "view_link": None
+                    "view_link": None,
+                    "description": spec.get("description", "")
                 })
 
         else:
@@ -392,7 +395,8 @@ def view_page(request: Request, view_name: str):
                 "iframe_src": None, 
                 "detail_link": None,
                 "view_link": None,
-                "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW")
+                "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW"),
+                "description": spec.get("description", "")
             })
 
         if iframe_src:
@@ -401,7 +405,8 @@ def view_page(request: Request, view_name: str):
                 "iframe_src": iframe_src, 
                 "detail_link": detail_link,
                 "view_link": view_link,
-                "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW")
+                "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW"),
+                "description": spec.get("description", "")
             })
 
     rotation = cfg.get("rotation", {})
@@ -450,7 +455,8 @@ def spot_detail(request: Request, spot_name: str):
             "iframe_src": iframe_src, 
             "detail_link": None,
             "view_link": None,
-            "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW")
+            "wind_directions": spec.get("wind_directions", "N,NE,E,SE,S,SW,W,NW"),
+            "description": spec.get("description", "")
         })
 
     # You can choose to keep DWD on the left on detail pages; set to False if not desired.
