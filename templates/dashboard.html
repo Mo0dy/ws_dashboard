@@ -41,11 +41,12 @@
         const version = "{{ dwd_version }}";
         const frames = [
           { src: "/dwd/main.png?d=" + version,  duration: 30000 },
-          { src: "/dwd/v036.png?d=" + version,  duration: 5000  },
-          { src: "/dwd/v048.png?d=" + version,  duration: 5000  },
-          { src: "/dwd/v060.png?d=" + version,  duration: 5000  },
-          { src: "/dwd/v084.png?d=" + version,  duration: 5000  },
-          { src: "/dwd/v108.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/v36.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/036.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/048.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/060.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/084.png?d=" + version,  duration: 5000  },
+          { src: "/dwd/108.png?d=" + version,  duration: 5000  },
         ];
         frames.forEach(f => { const im = new Image(); im.src = f.src; });
         const img = document.getElementById("dwd-rotator");
